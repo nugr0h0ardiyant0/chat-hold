@@ -15,7 +15,7 @@ interface User {
   last_message: string | null;
 }
 
-export default function HoldManager() {
+const HoldManager = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [newPhoneNumber, setNewPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
@@ -143,8 +143,7 @@ export default function HoldManager() {
   const totalUsers = users.length;
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-4">
@@ -324,7 +323,8 @@ export default function HoldManager() {
             </CardContent>
           </Card>
         </div>
-      </div>
     </div>
   );
-}
+};
+
+export default HoldManager;

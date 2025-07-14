@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_checkout: boolean | null
           phone_number: string
           ringkasan: string | null
           total_berat: number | null
@@ -27,6 +28,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id: string
+          is_checkout?: boolean | null
           phone_number: string
           ringkasan?: string | null
           total_berat?: number | null
@@ -36,6 +38,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_checkout?: boolean | null
           phone_number?: string
           ringkasan?: string | null
           total_berat?: number | null
@@ -85,6 +88,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      conversations_log: {
+        Row: {
+          conversation_id: number
+          customer_phone: number | null
+          id: number
+          message_content: string | null
+          timestamp: string | null
+        }
+        Insert: {
+          conversation_id: number
+          customer_phone?: number | null
+          id?: number
+          message_content?: string | null
+          timestamp?: string | null
+        }
+        Update: {
+          conversation_id?: number
+          customer_phone?: number | null
+          id?: number
+          message_content?: string | null
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
+      Keluhan: {
+        Row: {
+          Datetime: string
+          id: string
+          Keluhan: string | null
+          Nama_Pelanggan: string | null
+          Nomor_Pelanggan: number | null
+        }
+        Insert: {
+          Datetime?: string
+          id?: string
+          Keluhan?: string | null
+          Nama_Pelanggan?: string | null
+          Nomor_Pelanggan?: number | null
+        }
+        Update: {
+          Datetime?: string
+          id?: string
+          Keluhan?: string | null
+          Nama_Pelanggan?: string | null
+          Nomor_Pelanggan?: number | null
+        }
+        Relationships: []
       }
       Order: {
         Row: {
@@ -182,6 +233,7 @@ export type Database = {
           id: string
           kategori: string | null
           nama: string
+          product_id: number
           stok: number | null
           ukuran: string | null
           updated_at: string | null
@@ -195,6 +247,7 @@ export type Database = {
           id: string
           kategori?: string | null
           nama: string
+          product_id?: number
           stok?: number | null
           ukuran?: string | null
           updated_at?: string | null
@@ -208,6 +261,7 @@ export type Database = {
           id?: string
           kategori?: string | null
           nama?: string
+          product_id?: number
           stok?: number | null
           ukuran?: string | null
           updated_at?: string | null
@@ -222,6 +276,7 @@ export type Database = {
           id: string
           id_produk_terkait: string | null
           jenis: string | null
+          judul_promo: string | null
           nama: string
           syarat_ketentuan: string | null
           tanggal_mulai: string | null
@@ -234,6 +289,7 @@ export type Database = {
           id: string
           id_produk_terkait?: string | null
           jenis?: string | null
+          judul_promo?: string | null
           nama: string
           syarat_ketentuan?: string | null
           tanggal_mulai?: string | null
@@ -246,6 +302,7 @@ export type Database = {
           id?: string
           id_produk_terkait?: string | null
           jenis?: string | null
+          judul_promo?: string | null
           nama?: string
           syarat_ketentuan?: string | null
           tanggal_mulai?: string | null
@@ -286,12 +343,42 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          created_at: string | null
+          id: string
+          password_hash: string | null
+          role: string | null
+          updated_at: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          password_hash?: string | null
+          role?: string | null
+          updated_at?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          password_hash?: string | null
+          role?: string | null
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
