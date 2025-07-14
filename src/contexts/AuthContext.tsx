@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Find user by username
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id, username, password_hash')
+        .select('id, username, password_hash, role')
         .eq('username', username)
         .single();
 
@@ -100,29 +100,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: new Error('Username atau password salah') };
       }
 
-      // Create a custom session using Supabase auth
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      // Create a fake auth session since we're using custom authentication
+      const fakeUser = {
+        id: userData.id,
         email: `${username}@internal.local`,
-        password: userData.id // Use user ID as password for internal auth
+        created_at: new Date().toISOString(),
+        confirmed_at: new Date().toISOString(),
+        last_sign_in_at: new Date().toISOString(),
+        role: userData.role,
+        updated_at: new Date().toISOString(),
+        user_metadata: { username, role: userData.role }
+      } as any;
+
+      const fakeSession = {
+        access_token: 'fake-token',
+        refresh_token: 'fake-refresh',
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: fakeUser
+      } as any;
+
+      // Set the session manually
+      setUser(fakeUser);
+      setSession(fakeSession);
+      setUserProfile({
+        id: userData.id,
+        username: userData.username,
+        role: userData.role as 'admin' | 'operator',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       });
-
-      if (signInError) {
-        // If user doesn't exist in auth, create them
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: `${username}@internal.local`,
-          password: userData.id,
-          options: {
-            data: {
-              username: username,
-              role: 'admin' // Will be overridden by database role
-            }
-          }
-        });
-
-        if (signUpError) {
-          return { error: signUpError };
-        }
-      }
 
       return { error: null };
     } catch (error) {
