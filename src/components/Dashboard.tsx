@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import HoldManager from '@/components/HoldManager';
 import PromoManager from '@/components/PromoManager';
 import ProductManager from '@/components/ProductManager';
+import KeluhaneManager from '@/components/KeluhaneManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -15,21 +16,59 @@ import {
   Percent,
   Shield
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
   const { userProfile } = useAuth();
+  const [metrics, setMetrics] = useState({
+    chatToday: 0,
+    complaintsToday: 0,
+    checkoutToday: 0
+  });
 
   if (!userProfile) return null;
 
   const isAdmin = userProfile.role === 'admin';
   const isOperator = userProfile.role === 'operator';
 
-  // Mock metrics data - replace with real data
-  const metrics = {
-    totalChats: 156,
-    complaints: 23,
-    checkouts: 45
-  };
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Fetch chat metrics
+        const { data: chatData } = await supabase
+          .from('conversations_log')
+          .select('conversation_id')
+          .gte('timestamp', today);
+        
+        const uniqueChats = new Set(chatData?.map(item => item.conversation_id));
+        
+        // Fetch complaints metrics
+        const { data: complaintsData } = await supabase
+          .from('Keluhan')
+          .select('id')
+          .gte('Datetime', today);
+        
+        // Fetch checkout metrics
+        const { data: checkoutData } = await supabase
+          .from('Order')
+          .select('id')
+          .eq('status', 'PROCESSING')
+          .gte('created_at', today);
+
+        setMetrics({
+          chatToday: uniqueChats.size,
+          complaintsToday: complaintsData?.length || 0,
+          checkoutToday: checkoutData?.length || 0
+        });
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+      }
+    };
+
+    fetchMetrics();
+  }, []);
 
   return (
     <Layout>
@@ -55,7 +94,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Jumlah Chat Hari Ini</p>
-                  <p className="text-2xl font-bold text-blue-600">{metrics.totalChats}</p>
+                  <p className="text-2xl font-bold text-blue-600">{metrics.chatToday}</p>
                 </div>
                 <MessageSquare className="h-8 w-8 text-blue-500" />
               </div>
@@ -69,7 +108,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Jumlah Keluhan Hari Ini</p>
-                    <p className="text-2xl font-bold text-red-600">{metrics.complaints}</p>
+                    <p className="text-2xl font-bold text-red-600">{metrics.complaintsToday}</p>
                   </div>
                   <AlertTriangle className="h-8 w-8 text-red-500" />
                 </div>
@@ -84,7 +123,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Jumlah Checkout Hari Ini</p>
-                    <p className="text-2xl font-bold text-green-600">{metrics.checkouts}</p>
+                    <p className="text-2xl font-bold text-green-600">{metrics.checkoutToday}</p>
                   </div>
                   <ShoppingCart className="h-8 w-8 text-green-500" />
                 </div>
@@ -95,12 +134,20 @@ const Dashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue={isAdmin ? "hold" : "promo"} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-2'}`}>
             {/* Hold Management Tab - Admin only */}
             {isAdmin && (
               <TabsTrigger value="hold" className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
                 Pengelola Hold
+              </TabsTrigger>
+            )}
+            
+            {/* Complaints Management Tab - Admin only */}
+            {isAdmin && (
+              <TabsTrigger value="keluhan" className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Keluhan
               </TabsTrigger>
             )}
             
@@ -126,6 +173,13 @@ const Dashboard = () => {
             </TabsContent>
           )}
 
+          {/* Complaints Management Content - Admin only */}
+          {isAdmin && (
+            <TabsContent value="keluhan" className="space-y-4">
+              <KeluhaneManager />
+            </TabsContent>
+          )}
+
           {/* Promo Management Content */}
           <TabsContent value="promo" className="space-y-4">
             <PromoManager />
@@ -148,6 +202,7 @@ const Dashboard = () => {
                   {isAdmin ? (
                     <>
                       <li>Pengelola Responder WhatsApp (Hold Management)</li>
+                      <li>Manajemen Keluhan</li>
                       <li>Semua metrik operasional</li>
                       <li>Manajemen Promo (CRUD lengkap)</li>
                       <li>Manajemen Produk (CRUD lengkap)</li>

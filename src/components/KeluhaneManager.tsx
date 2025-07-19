@@ -6,17 +6,17 @@ import { AlertTriangle, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface Keluhan {
+type KeluhanRow = {
   id: string;
   Nomor_Pelanggan: number | null;
   Nama_Pelanggan: string | null;
   Keluhan: string | null;
   sudah_ditangani: boolean;
   Datetime: string;
-}
+};
 
 const KeluhaneManager = () => {
-  const [keluhanList, setKeluhanList] = useState<Keluhan[]>([]);
+  const [keluhanList, setKeluhanList] = useState<KeluhanRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
