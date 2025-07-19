@@ -18,31 +18,37 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          is_checkout: boolean | null
+          is_checkout: boolean
           phone_number: string
           ringkasan: string | null
           total_berat: number | null
           total_harga: number | null
+          total_ongkir: number | null
+          total_pembayaran: number | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           id: string
-          is_checkout?: boolean | null
+          is_checkout?: boolean
           phone_number: string
           ringkasan?: string | null
           total_berat?: number | null
           total_harga?: number | null
+          total_ongkir?: number | null
+          total_pembayaran?: number | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
-          is_checkout?: boolean | null
+          is_checkout?: boolean
           phone_number?: string
           ringkasan?: string | null
           total_berat?: number | null
           total_harga?: number | null
+          total_ongkir?: number | null
+          total_pembayaran?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -91,25 +97,46 @@ export type Database = {
       }
       conversations_log: {
         Row: {
-          conversation_id: number
+          conversation_id: string
           customer_phone: number | null
           id: number
           message_content: string | null
           timestamp: string | null
         }
         Insert: {
-          conversation_id: number
+          conversation_id: string
           customer_phone?: number | null
           id?: number
           message_content?: string | null
           timestamp?: string | null
         }
         Update: {
-          conversation_id?: number
+          conversation_id?: string
           customer_phone?: number | null
           id?: number
           message_content?: string | null
           timestamp?: string | null
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          content: string | null
+          embedding: string | null
+          id: number
+          metadata: Json | null
+        }
+        Insert: {
+          content?: string | null
+          embedding?: string | null
+          id?: number
+          metadata?: Json | null
+        }
+        Update: {
+          content?: string | null
+          embedding?: string | null
+          id?: number
+          metadata?: Json | null
         }
         Relationships: []
       }
@@ -120,6 +147,7 @@ export type Database = {
           Keluhan: string | null
           Nama_Pelanggan: string | null
           Nomor_Pelanggan: number | null
+          sudah_ditangani: boolean
         }
         Insert: {
           Datetime?: string
@@ -127,6 +155,7 @@ export type Database = {
           Keluhan?: string | null
           Nama_Pelanggan?: string | null
           Nomor_Pelanggan?: number | null
+          sudah_ditangani?: boolean
         }
         Update: {
           Datetime?: string
@@ -134,43 +163,35 @@ export type Database = {
           Keluhan?: string | null
           Nama_Pelanggan?: string | null
           Nomor_Pelanggan?: number | null
+          sudah_ditangani?: boolean
         }
         Relationships: []
       }
       Order: {
         Row: {
           alamat_penerima: string | null
-          alamat_pengirim: string | null
           created_at: string | null
           id: string
           nama_penerima: string | null
-          nama_pengirim: string | null
           no_hp_penerima: string | null
-          no_hp_pengirim: string | null
           status: string | null
           updated_at: string | null
         }
         Insert: {
           alamat_penerima?: string | null
-          alamat_pengirim?: string | null
           created_at?: string | null
           id: string
           nama_penerima?: string | null
-          nama_pengirim?: string | null
           no_hp_penerima?: string | null
-          no_hp_pengirim?: string | null
           status?: string | null
           updated_at?: string | null
         }
         Update: {
           alamat_penerima?: string | null
-          alamat_pengirim?: string | null
           created_at?: string | null
           id?: string
           nama_penerima?: string | null
-          nama_pengirim?: string | null
           no_hp_penerima?: string | null
-          no_hp_pengirim?: string | null
           status?: string | null
           updated_at?: string | null
         }
@@ -274,10 +295,10 @@ export type Database = {
           created_at: string | null
           deskripsi: string | null
           id: string
-          id_produk_terkait: string | null
           jenis: string | null
           judul_promo: string | null
           nama: string
+          product_id: string | null
           syarat_ketentuan: string | null
           tanggal_mulai: string | null
           tanggal_selesai: string | null
@@ -287,10 +308,10 @@ export type Database = {
           created_at?: string | null
           deskripsi?: string | null
           id: string
-          id_produk_terkait?: string | null
           jenis?: string | null
           judul_promo?: string | null
           nama: string
+          product_id?: string | null
           syarat_ketentuan?: string | null
           tanggal_mulai?: string | null
           tanggal_selesai?: string | null
@@ -300,10 +321,10 @@ export type Database = {
           created_at?: string | null
           deskripsi?: string | null
           id?: string
-          id_produk_terkait?: string | null
           jenis?: string | null
           judul_promo?: string | null
           nama?: string
+          product_id?: string | null
           syarat_ketentuan?: string | null
           tanggal_mulai?: string | null
           tanggal_selesai?: string | null
@@ -312,7 +333,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "Promo_id_produk_terkait_fkey"
-            columns: ["id_produk_terkait"]
+            columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "Produk"
             referencedColumns: ["id"]
@@ -322,6 +343,7 @@ export type Database = {
       User: {
         Row: {
           created_at: string | null
+          customer_journey: string
           is_hold: boolean | null
           last_message: string | null
           phone_number: string
@@ -329,6 +351,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          customer_journey?: string
           is_hold?: boolean | null
           last_message?: string | null
           phone_number: string
@@ -336,10 +359,35 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          customer_journey?: string
           is_hold?: boolean | null
           last_message?: string | null
           phone_number?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_follow_up: {
+        Row: {
+          id: number
+          is_need_followup: number | null
+          last_interact: string | null
+          last_status_description: string | null
+          user_phone_number: string | null
+        }
+        Insert: {
+          id?: number
+          is_need_followup?: number | null
+          last_interact?: string | null
+          last_status_description?: string | null
+          user_phone_number?: string | null
+        }
+        Update: {
+          id?: number
+          is_need_followup?: number | null
+          last_interact?: string | null
+          last_status_description?: string | null
+          user_phone_number?: string | null
         }
         Relationships: []
       }
@@ -375,9 +423,110 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: string
+      }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: string
+      }
+      match_documents: {
+        Args: { query_embedding: string; match_count?: number; filter?: Json }
+        Returns: {
+          id: number
+          content: string
+          metadata: Json
+          similarity: number
+        }[]
+      }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
     }
     Enums: {
