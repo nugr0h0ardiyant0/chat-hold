@@ -38,11 +38,11 @@ const Dashboard = () => {
         
         // Fetch chat metrics
         const { data: chatData } = await supabase
-          .from('conversations_log')
-          .select('conversation_id')
-          .gte('timestamp', today);
+          .from('User')
+          .select('phone_number')
+          .gte('updated_at', today);
         
-        const uniqueChats = new Set(chatData?.map(item => item.conversation_id));
+        const uniqueChats = new Set(chatData?.map(item => item.phone_number));
         
         // Fetch complaints metrics
         const { data: complaintsData } = await supabase
