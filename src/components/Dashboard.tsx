@@ -5,6 +5,7 @@ import HoldManager from '@/components/HoldManager';
 import PromoManager from '@/components/PromoManager';
 import ProductManager from '@/components/ProductManager';
 import KeluhaneManager from '@/components/KeluhaneManager';
+import CustomerJourneyManager from '@/components/CustomerJourneyManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -14,7 +15,8 @@ import {
   Users, 
   Package, 
   Percent,
-  Shield
+  Shield,
+  Navigation
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -23,7 +25,9 @@ const Dashboard = () => {
   const [metrics, setMetrics] = useState({
     chatToday: 0,
     complaintsToday: 0,
-    checkoutToday: 0
+    checkoutToday: 0,
+    customerJourneyToday: 0,
+    followUpNeeded: 0
   });
 
   if (!userProfile) return null;
@@ -57,10 +61,20 @@ const Dashboard = () => {
           .eq('status', 'PROCESSING')
           .gte('created_at', today);
 
+        // Fetch customer journey metrics using raw SQL
+        const { data: journeyData } = await supabase
+          .rpc('get_daily_customer_journey_metrics');
+
+        // Fetch follow up metrics using raw SQL
+        const { data: followUpData } = await supabase
+          .rpc('get_follow_up_count');
+
         setMetrics({
           chatToday: uniqueChats.size,
           complaintsToday: complaintsData?.length || 0,
-          checkoutToday: checkoutData?.length || 0
+          checkoutToday: checkoutData?.length || 0,
+          customerJourneyToday: journeyData || 0,
+          followUpNeeded: followUpData || 0
         });
       } catch (error) {
         console.error('Error fetching metrics:', error);
@@ -132,9 +146,38 @@ const Dashboard = () => {
           )}
         </div>
 
+        {/* Customer Journey Metrics - Admin only */}
+        {isAdmin && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Customer Journey Hari Ini</p>
+                    <p className="text-2xl font-bold text-purple-600">{metrics.customerJourneyToday}</p>
+                  </div>
+                  <Navigation className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Follow Up Diperlukan</p>
+                    <p className="text-2xl font-bold text-orange-600">{metrics.followUpNeeded}</p>
+                  </div>
+                  <MessageSquare className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Main Content Tabs */}
         <Tabs defaultValue={isAdmin ? "hold" : "promo"} className="space-y-4">
-          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-2'}`}>
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-2'}`}>
             {/* Hold Management Tab - Admin only */}
             {isAdmin && (
               <TabsTrigger value="hold" className="flex items-center gap-2">
@@ -148,6 +191,14 @@ const Dashboard = () => {
               <TabsTrigger value="keluhan" className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 Keluhan
+              </TabsTrigger>
+            )}
+
+            {/* Customer Journey Tab - Admin only */}
+            {isAdmin && (
+              <TabsTrigger value="customer-journey" className="flex items-center gap-2">
+                <Navigation className="h-4 w-4" />
+                Customer Journey
               </TabsTrigger>
             )}
             
@@ -180,6 +231,13 @@ const Dashboard = () => {
             </TabsContent>
           )}
 
+          {/* Customer Journey Management Content - Admin only */}
+          {isAdmin && (
+            <TabsContent value="customer-journey" className="space-y-4">
+              <CustomerJourneyManager />
+            </TabsContent>
+          )}
+
           {/* Promo Management Content */}
           <TabsContent value="promo" className="space-y-4">
             <PromoManager />
@@ -203,6 +261,7 @@ const Dashboard = () => {
                     <>
                       <li>Pengelola Responder WhatsApp (Hold Management)</li>
                       <li>Manajemen Keluhan</li>
+                      <li>Manajemen Customer Journey</li>
                       <li>Semua metrik operasional</li>
                       <li>Manajemen Promo (CRUD lengkap)</li>
                       <li>Manajemen Produk (CRUD lengkap)</li>
