@@ -95,27 +95,39 @@ export type Database = {
           },
         ]
       }
-      conversations_log: {
+      CustomerJourney: {
         Row: {
-          conversation_id: string
-          customer_phone: number | null
+          created_at: string
+          customer_journey: string
+          follow_up: boolean
           id: number
-          message_content: string | null
-          timestamp: string | null
+          message: string | null
+          message_id: string | null
+          phone_number: string | null
+          session: string | null
+          updated_at: string | null
         }
         Insert: {
-          conversation_id: string
-          customer_phone?: number | null
+          created_at?: string
+          customer_journey?: string
+          follow_up?: boolean
           id?: number
-          message_content?: string | null
-          timestamp?: string | null
+          message?: string | null
+          message_id?: string | null
+          phone_number?: string | null
+          session?: string | null
+          updated_at?: string | null
         }
         Update: {
-          conversation_id?: string
-          customer_phone?: number | null
+          created_at?: string
+          customer_journey?: string
+          follow_up?: boolean
           id?: number
-          message_content?: string | null
-          timestamp?: string | null
+          message?: string | null
+          message_id?: string | null
+          phone_number?: string | null
+          session?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -145,7 +157,6 @@ export type Database = {
           Datetime: string
           id: string
           Keluhan: string | null
-          Nama_Pelanggan: string | null
           Nomor_Pelanggan: number | null
           sudah_ditangani: boolean
         }
@@ -153,7 +164,6 @@ export type Database = {
           Datetime?: string
           id?: string
           Keluhan?: string | null
-          Nama_Pelanggan?: string | null
           Nomor_Pelanggan?: number | null
           sudah_ditangani?: boolean
         }
@@ -161,7 +171,6 @@ export type Database = {
           Datetime?: string
           id?: string
           Keluhan?: string | null
-          Nama_Pelanggan?: string | null
           Nomor_Pelanggan?: number | null
           sudah_ditangani?: boolean
         }
@@ -340,10 +349,36 @@ export type Database = {
           },
         ]
       }
+      temp_message: {
+        Row: {
+          chat_id: string | null
+          id: number
+          message: string | null
+          message_id: string | null
+          session_id: string
+          timestamp: string | null
+        }
+        Insert: {
+          chat_id?: string | null
+          id?: number
+          message?: string | null
+          message_id?: string | null
+          session_id: string
+          timestamp?: string | null
+        }
+        Update: {
+          chat_id?: string | null
+          id?: number
+          message?: string | null
+          message_id?: string | null
+          session_id?: string
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
       User: {
         Row: {
           created_at: string | null
-          customer_journey: string
           is_hold: boolean | null
           last_message: string | null
           phone_number: string
@@ -351,7 +386,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          customer_journey?: string
           is_hold?: boolean | null
           last_message?: string | null
           phone_number: string
@@ -359,7 +393,6 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          customer_journey?: string
           is_hold?: boolean | null
           last_message?: string | null
           phone_number?: string
@@ -426,6 +459,39 @@ export type Database = {
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
+      }
+      create_customer_journey: {
+        Args: {
+          p_phone_number: string
+          p_customer_journey: string
+          p_follow_up: boolean
+          p_message: string
+          p_message_id: string
+          p_session: string
+        }
+        Returns: undefined
+      }
+      get_customer_journeys: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: number
+          phone_number: string
+          customer_journey: string
+          follow_up: boolean
+          message: string
+          message_id: string
+          session: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      get_daily_customer_journey_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_follow_up_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       get_user_role: {
         Args: { user_id: string }
@@ -503,6 +569,22 @@ export type Database = {
       sparsevec_typmod_in: {
         Args: { "": unknown[] }
         Returns: number
+      }
+      update_customer_journey: {
+        Args: {
+          journey_id: number
+          p_phone_number: string
+          p_customer_journey: string
+          p_follow_up: boolean
+          p_message: string
+          p_message_id: string
+          p_session: string
+        }
+        Returns: undefined
+      }
+      update_customer_journey_followup: {
+        Args: { journey_id: number; new_follow_up: boolean }
+        Returns: undefined
       }
       vector_avg: {
         Args: { "": number[] }

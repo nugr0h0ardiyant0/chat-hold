@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 type KeluhanRow = {
   id: string;
   Nomor_Pelanggan: number | null;
-  Nama_Pelanggan: string | null;
   Keluhan: string | null;
   sudah_ditangani: boolean;
   Datetime: string;
@@ -105,10 +104,6 @@ const KeluhaneManager = () => {
                         <span className="text-sm bg-muted px-2 py-1 rounded">
                           {keluhan.Nomor_Pelanggan}
                         </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Nama:</span>
-                        <span>{keluhan.Nama_Pelanggan}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {new Date(keluhan.Datetime).toLocaleString('id-ID')}

@@ -71,9 +71,7 @@ const CustomerJourneyManager = () => {
   const fetchJourneys = async () => {
     try {
       const { data, error } = await supabase
-        .from('CustomerJourney')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .rpc('get_customer_journeys');
 
       if (error) throw error;
       setJourneys(data || []);
@@ -88,8 +86,7 @@ const CustomerJourneyManager = () => {
   const fetchMetrics = async () => {
     try {
       const { data: allJourneys } = await supabase
-        .from('CustomerJourney')
-        .select('phone_number, follow_up');
+        .rpc('get_customer_journeys');
 
       if (allJourneys) {
         const uniquePhones = new Set(allJourneys.map(j => j.phone_number).filter(Boolean));
@@ -112,19 +109,28 @@ const CustomerJourneyManager = () => {
     try {
       if (editingJourney) {
         const { error } = await supabase
-          .from('CustomerJourney')
-          .update({
-            ...formData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', editingJourney.id);
+          .rpc('update_customer_journey', {
+            journey_id: editingJourney.id,
+            p_phone_number: formData.phone_number,
+            p_customer_journey: formData.customer_journey,
+            p_follow_up: formData.follow_up,
+            p_message: formData.message,
+            p_message_id: formData.message_id,
+            p_session: formData.session
+          });
 
         if (error) throw error;
         toast.success('Customer journey berhasil diperbarui');
       } else {
         const { error } = await supabase
-          .from('CustomerJourney')
-          .insert([formData]);
+          .rpc('create_customer_journey', {
+            p_phone_number: formData.phone_number,
+            p_customer_journey: formData.customer_journey,
+            p_follow_up: formData.follow_up,
+            p_message: formData.message,
+            p_message_id: formData.message_id,
+            p_session: formData.session
+          });
 
         if (error) throw error;
         toast.success('Customer journey berhasil ditambahkan');

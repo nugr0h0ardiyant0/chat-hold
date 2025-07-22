@@ -61,13 +61,23 @@ const Dashboard = () => {
           .eq('status', 'PROCESSING')
           .gte('created_at', today);
 
-        // Fetch customer journey metrics using raw SQL
-        const { data: journeyData } = await supabase
-          .rpc('get_daily_customer_journey_metrics');
+        // Fetch customer journey metrics - handle gracefully if function doesn't exist
+        let journeyData = 0;
+        let followUpData = 0;
+        
+        try {
+          const { data: jData } = await supabase.rpc('get_daily_customer_journey_metrics');
+          journeyData = jData || 0;
+        } catch (error) {
+          console.log('Customer journey metrics function not available');
+        }
 
-        // Fetch follow up metrics using raw SQL
-        const { data: followUpData } = await supabase
-          .rpc('get_follow_up_count');
+        try {
+          const { data: fData } = await supabase.rpc('get_follow_up_count');
+          followUpData = fData || 0;
+        } catch (error) {
+          console.log('Follow up count function not available');
+        }
 
         setMetrics({
           chatToday: uniqueChats.size,
