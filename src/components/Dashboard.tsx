@@ -9,6 +9,7 @@ import CustomerJourneyManager from '@/components/CustomerJourneyManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { 
   MessageSquare, 
   AlertTriangle, 
@@ -18,7 +19,8 @@ import {
   Percent,
   Shield,
   Navigation,
-  CalendarDays
+  CalendarDays,
+  Download
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -32,6 +34,71 @@ const Dashboard = () => {
     followUpNeeded: 0
   });
   const [timeRange, setTimeRange] = useState('today');
+
+  const downloadCSV = async (type: 'chat' | 'complaints' | 'checkout') => {
+    try {
+      const { start, end } = getDateRange(timeRange);
+      const startDate = start.toISOString().split('T')[0];
+      const endDate = end.toISOString().split('T')[0];
+      
+      let data: any[] = [];
+      let filename = '';
+      
+      if (type === 'chat') {
+        const { data: chatData } = await supabase
+          .from('User')
+          .select('phone_number, created_at, updated_at, last_message')
+          .gte('updated_at', startDate)
+          .lte('updated_at', endDate + 'T23:59:59');
+        data = chatData || [];
+        filename = `chat_data_${timeRange}.csv`;
+      } else if (type === 'complaints') {
+        const { data: complaintsData } = await supabase
+          .from('Keluhan')
+          .select('id, Nomor_Pelanggan, Keluhan, Datetime, sudah_ditangani')
+          .gte('Datetime', startDate)
+          .lte('Datetime', endDate + 'T23:59:59');
+        data = complaintsData || [];
+        filename = `keluhan_data_${timeRange}.csv`;
+      } else if (type === 'checkout') {
+        const { data: checkoutData } = await supabase
+          .from('Order')
+          .select('id, nama_penerima, no_hp_penerima, alamat_penerima, status, created_at')
+          .eq('status', 'PROCESSING')
+          .gte('created_at', startDate)
+          .lte('created_at', endDate + 'T23:59:59');
+        data = checkoutData || [];
+        filename = `checkout_data_${timeRange}.csv`;
+      }
+      
+      if (data.length === 0) {
+        alert('Tidak ada data untuk periode yang dipilih');
+        return;
+      }
+      
+      // Convert to CSV
+      const headers = Object.keys(data[0]);
+      const csvContent = [
+        headers.join(','),
+        ...data.map(row => 
+          headers.map(header => {
+            const value = row[header];
+            return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+          }).join(',')
+        )
+      ].join('\n');
+      
+      // Download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    } catch (error) {
+      console.error('Error downloading CSV:', error);
+      alert('Gagal mengunduh data CSV');
+    }
+  };
 
   if (!userProfile) return null;
 
@@ -53,6 +120,10 @@ const Dashboard = () => {
         const month = new Date(today);
         month.setDate(month.getDate() - 29);
         return { start: month, end: today };
+      case '1year':
+        const year = new Date(today);
+        year.setFullYear(year.getFullYear() - 1);
+        return { start: year, end: today };
       default:
         return { start: today, end: today };
     }
@@ -201,18 +272,56 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <CalendarDays className="h-5 w-5 text-muted-foreground" />
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Periode:</span>
-                <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="today">Hari Ini</SelectItem>
-                    <SelectItem value="7days">7 Hari Terakhir</SelectItem>
-                    <SelectItem value="30days">30 Hari Terakhir</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Periode:</span>
+                  <Select value={timeRange} onValueChange={setTimeRange}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="today">Hari Ini</SelectItem>
+                      <SelectItem value="7days">7 Hari Terakhir</SelectItem>
+                      <SelectItem value="30days">30 Hari Terakhir</SelectItem>
+                      <SelectItem value="1year">1 Tahun Terakhir</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Download CSV:</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => downloadCSV('chat')}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Chat
+                  </Button>
+                  {isAdmin && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => downloadCSV('complaints')}
+                        className="flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Keluhan
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => downloadCSV('checkout')}
+                        className="flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Checkout
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -226,7 +335,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Jumlah Chat {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : '30 Hari'}
+                    Jumlah Chat {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : timeRange === '30days' ? '30 Hari' : '1 Tahun'}
                   </p>
                   <p className="text-2xl font-bold text-blue-600">{metrics.chatToday}</p>
                 </div>
@@ -242,7 +351,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Jumlah Keluhan {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : '30 Hari'}
+                      Jumlah Keluhan {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : timeRange === '30days' ? '30 Hari' : '1 Tahun'}
                     </p>
                     <p className="text-2xl font-bold text-red-600">{metrics.complaintsToday}</p>
                   </div>
@@ -259,7 +368,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Jumlah Checkout {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : '30 Hari'}
+                      Jumlah Checkout {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : timeRange === '30days' ? '30 Hari' : '1 Tahun'}
                     </p>
                     <p className="text-2xl font-bold text-green-600">{metrics.checkoutToday}</p>
                   </div>
@@ -278,7 +387,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Customer Journey {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : '30 Hari'}
+                    Customer Journey {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : timeRange === '30days' ? '30 Hari' : '1 Tahun'}
                   </p>
                   <p className="text-2xl font-bold text-purple-600">{metrics.customerJourneyToday}</p>
                 </div>

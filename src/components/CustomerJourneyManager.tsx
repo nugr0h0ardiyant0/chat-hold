@@ -106,7 +106,7 @@ const CustomerJourneyManager = () => {
 
       if (allJourneys) {
         const uniquePhones = new Set(allJourneys.map(j => j.phone_number).filter(Boolean));
-        const needFollowUp = allJourneys.filter(j => j.follow_up).length;
+        const needFollowUp = allJourneys.filter(j => !j.follow_up).length;
 
         setMetrics({
           totalJourneys: allJourneys.length,
@@ -388,7 +388,7 @@ const CustomerJourneyManager = () => {
                   onCheckedChange={(checked) => setFormData({ ...formData, follow_up: checked })}
                 />
                 <Label htmlFor="follow_up">
-                  Perlu Follow Up (TRUE = Perlu follow up, FALSE = Tidak perlu follow up)
+                  Follow Up Status (TRUE = Tidak perlu follow up, FALSE = Perlu follow up)
                 </Label>
               </div>
 
@@ -433,9 +433,9 @@ const CustomerJourneyManager = () => {
                     <Badge className={getJourneyBadgeColor(journey.customer_journey)}>
                       {getJourneyDisplayName(journey.customer_journey)}
                     </Badge>
-                    <Badge variant={journey.follow_up ? "default" : "outline"} 
-                           className={journey.follow_up ? "bg-orange-100 text-orange-800 border-orange-300" : "text-green-600 border-green-600"}>
-                      {journey.follow_up ? "Perlu Follow Up" : "Tidak Perlu Follow Up"}
+                    <Badge variant={journey.follow_up ? "outline" : "default"} 
+                           className={journey.follow_up ? "text-green-600 border-green-600" : "bg-orange-100 text-orange-800 border-orange-300"}>
+                      {journey.follow_up ? "Tidak Perlu Follow Up" : "Perlu Follow Up"}
                     </Badge>
                   </div>
                   
