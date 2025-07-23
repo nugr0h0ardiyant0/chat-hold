@@ -56,16 +56,32 @@ const CustomerJourneyManager = () => {
 
   const journeyTypes = [
     'pelanggan_tanya',
-    'pelanggan_tertarik',
-    'pelanggan_nego',
-    'pelanggan_beli',
-    'pelanggan_komplain',
-    'pelanggan_follow_up'
+    'masuk_keranjang',
+    'inisiasi_payment_belum_bayar',
+    'invoice_gagal_bayar',
+    'sudah_bayar',
+    'keluhan'
   ];
 
   useEffect(() => {
     fetchJourneys();
     fetchMetrics();
+
+    // Set up real-time subscription for CustomerJourney table
+    const channel = supabase
+      .channel('customerjourney-realtime')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'CustomerJourney' }, 
+        () => {
+          fetchJourneys();
+          fetchMetrics();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchJourneys = async () => {
@@ -199,12 +215,24 @@ const CustomerJourneyManager = () => {
   const getJourneyBadgeColor = (journey: string) => {
     switch (journey) {
       case 'pelanggan_tanya': return 'bg-blue-100 text-blue-800';
-      case 'pelanggan_tertarik': return 'bg-green-100 text-green-800';
-      case 'pelanggan_nego': return 'bg-yellow-100 text-yellow-800';
-      case 'pelanggan_beli': return 'bg-emerald-100 text-emerald-800';
-      case 'pelanggan_komplain': return 'bg-red-100 text-red-800';
-      case 'pelanggan_follow_up': return 'bg-purple-100 text-purple-800';
+      case 'masuk_keranjang': return 'bg-green-100 text-green-800';
+      case 'inisiasi_payment_belum_bayar': return 'bg-yellow-100 text-yellow-800';
+      case 'invoice_gagal_bayar': return 'bg-red-100 text-red-800';
+      case 'sudah_bayar': return 'bg-emerald-100 text-emerald-800';
+      case 'keluhan': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getJourneyDisplayName = (journey: string) => {
+    switch (journey) {
+      case 'pelanggan_tanya': return 'Pelanggan Tanya';
+      case 'masuk_keranjang': return 'Masuk Keranjang';
+      case 'inisiasi_payment_belum_bayar': return 'Inisiasi Payment (Belum Bayar)';
+      case 'invoice_gagal_bayar': return 'Invoice Gagal Bayar';
+      case 'sudah_bayar': return 'Sudah Bayar';
+      case 'keluhan': return 'Keluhan';
+      default: return journey;
     }
   };
 
@@ -314,7 +342,7 @@ const CustomerJourneyManager = () => {
                     <SelectContent>
                       {journeyTypes.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type.replace('_', ' ').replace('pelanggan', 'Pelanggan')}
+                          {getJourneyDisplayName(type)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -359,7 +387,9 @@ const CustomerJourneyManager = () => {
                   checked={formData.follow_up}
                   onCheckedChange={(checked) => setFormData({ ...formData, follow_up: checked })}
                 />
-                <Label htmlFor="follow_up">Perlu Follow Up</Label>
+                <Label htmlFor="follow_up">
+                  Perlu Follow Up (TRUE = Perlu follow up, FALSE = Tidak perlu follow up)
+                </Label>
               </div>
 
               <div className="flex gap-2">
@@ -401,13 +431,12 @@ const CustomerJourneyManager = () => {
                     <Phone className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{journey.phone_number || 'Tidak ada nomor'}</span>
                     <Badge className={getJourneyBadgeColor(journey.customer_journey)}>
-                      {journey.customer_journey.replace('_', ' ').replace('pelanggan', 'Pelanggan')}
+                      {getJourneyDisplayName(journey.customer_journey)}
                     </Badge>
-                    {journey.follow_up && (
-                      <Badge variant="outline" className="text-orange-600 border-orange-600">
-                        Follow Up
-                      </Badge>
-                    )}
+                    <Badge variant={journey.follow_up ? "default" : "outline"} 
+                           className={journey.follow_up ? "bg-orange-100 text-orange-800 border-orange-300" : "text-green-600 border-green-600"}>
+                      {journey.follow_up ? "Perlu Follow Up" : "Tidak Perlu Follow Up"}
+                    </Badge>
                   </div>
                   
                   {journey.message && (

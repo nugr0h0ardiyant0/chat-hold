@@ -8,6 +8,7 @@ import KeluhaneManager from '@/components/KeluhaneManager';
 import CustomerJourneyManager from '@/components/CustomerJourneyManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   MessageSquare, 
   AlertTriangle, 
@@ -16,7 +17,8 @@ import {
   Package, 
   Percent,
   Shield,
-  Navigation
+  Navigation,
+  CalendarDays
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -29,70 +31,154 @@ const Dashboard = () => {
     customerJourneyToday: 0,
     followUpNeeded: 0
   });
+  const [timeRange, setTimeRange] = useState('today');
 
   if (!userProfile) return null;
 
   const isAdmin = userProfile.role === 'admin';
   const isOperator = userProfile.role === 'operator';
 
+  const getDateRange = (range: string) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (range) {
+      case 'today':
+        return { start: today, end: today };
+      case '7days':
+        const week = new Date(today);
+        week.setDate(week.getDate() - 6);
+        return { start: week, end: today };
+      case '30days':
+        const month = new Date(today);
+        month.setDate(month.getDate() - 29);
+        return { start: month, end: today };
+      default:
+        return { start: today, end: today };
+    }
+  };
+
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const today = new Date().toISOString().split('T')[0];
+        const { start, end } = getDateRange(timeRange);
+        const startDate = start.toISOString().split('T')[0];
+        const endDate = end.toISOString().split('T')[0];
         
-        // Fetch chat metrics
-        const { data: chatData } = await supabase
-          .from('User')
-          .select('phone_number')
-          .gte('updated_at', today);
-        
-        const uniqueChats = new Set(chatData?.map(item => item.phone_number));
-        
-        // Fetch complaints metrics
-        const { data: complaintsData } = await supabase
-          .from('Keluhan')
-          .select('id')
-          .gte('Datetime', today);
-        
-        // Fetch checkout metrics
-        const { data: checkoutData } = await supabase
-          .from('Order')
-          .select('id')
-          .eq('status', 'PROCESSING')
-          .gte('created_at', today);
-
-        // Fetch customer journey metrics - handle gracefully if function doesn't exist
-        let journeyData = 0;
-        let followUpData = 0;
-        
+        // Use range functions if available, fallback to original queries
         try {
-          const { data: jData } = await supabase.rpc('get_daily_customer_journey_metrics');
-          journeyData = jData || 0;
-        } catch (error) {
-          console.log('Customer journey metrics function not available');
-        }
+          const [chatData, complaintsData, checkoutData, journeyData, followUpData] = await Promise.all([
+            supabase.rpc('get_chat_metrics_range', { start_date: startDate, end_date: endDate }),
+            supabase.rpc('get_complaints_metrics_range', { start_date: startDate, end_date: endDate }),
+            supabase.rpc('get_checkout_metrics_range', { start_date: startDate, end_date: endDate }),
+            supabase.rpc('get_customer_journey_metrics_range', { start_date: startDate, end_date: endDate }),
+            supabase.rpc('get_follow_up_count')
+          ]);
 
-        try {
-          const { data: fData } = await supabase.rpc('get_follow_up_count');
-          followUpData = fData || 0;
+          setMetrics({
+            chatToday: chatData.data || 0,
+            complaintsToday: complaintsData.data || 0,
+            checkoutToday: checkoutData.data || 0,
+            customerJourneyToday: journeyData.data || 0,
+            followUpNeeded: followUpData.data || 0
+          });
         } catch (error) {
-          console.log('Follow up count function not available');
-        }
+          console.log('Using fallback queries');
+          
+          // Fallback to original queries
+          const { data: chatData } = await supabase
+            .from('User')
+            .select('phone_number')
+            .gte('updated_at', startDate)
+            .lte('updated_at', endDate + 'T23:59:59');
+          
+          const uniqueChats = new Set(chatData?.map(item => item.phone_number));
+          
+          const { data: complaintsData } = await supabase
+            .from('Keluhan')
+            .select('id')
+            .gte('Datetime', startDate)
+            .lte('Datetime', endDate + 'T23:59:59');
+          
+          const { data: checkoutData } = await supabase
+            .from('Order')
+            .select('id')
+            .eq('status', 'PROCESSING')
+            .gte('created_at', startDate)
+            .lte('created_at', endDate + 'T23:59:59');
 
-        setMetrics({
-          chatToday: uniqueChats.size,
-          complaintsToday: complaintsData?.length || 0,
-          checkoutToday: checkoutData?.length || 0,
-          customerJourneyToday: journeyData || 0,
-          followUpNeeded: followUpData || 0
-        });
+          let journeyData = 0;
+          let followUpData = 0;
+          
+          try {
+            const { data: jData } = await supabase.rpc('get_customer_journey_metrics_range', { start_date: startDate, end_date: endDate });
+            journeyData = jData || 0;
+          } catch (error) {
+            console.log('Customer journey metrics function not available');
+          }
+
+          try {
+            const { data: fData } = await supabase.rpc('get_follow_up_count');
+            followUpData = fData || 0;
+          } catch (error) {
+            console.log('Follow up count function not available');
+          }
+
+          setMetrics({
+            chatToday: uniqueChats.size,
+            complaintsToday: complaintsData?.length || 0,
+            checkoutToday: checkoutData?.length || 0,
+            customerJourneyToday: journeyData || 0,
+            followUpNeeded: followUpData || 0
+          });
+        }
       } catch (error) {
         console.error('Error fetching metrics:', error);
       }
     };
 
     fetchMetrics();
-  }, []);
+
+    // Set up real-time subscriptions
+    const customerJourneyChannel = supabase
+      .channel('customerjourney-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'CustomerJourney' }, 
+        () => fetchMetrics()
+      )
+      .subscribe();
+
+    const userChannel = supabase
+      .channel('user-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'User' }, 
+        () => fetchMetrics()
+      )
+      .subscribe();
+
+    const keluhanChannel = supabase
+      .channel('keluhan-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'Keluhan' }, 
+        () => fetchMetrics()
+      )
+      .subscribe();
+
+    const orderChannel = supabase
+      .channel('order-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'Order' }, 
+        () => fetchMetrics()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(customerJourneyChannel);
+      supabase.removeChannel(userChannel);
+      supabase.removeChannel(keluhanChannel);
+      supabase.removeChannel(orderChannel);
+    };
+  }, [timeRange]);
 
   return (
     <Layout>
@@ -110,6 +196,28 @@ const Dashboard = () => {
           </CardHeader>
         </Card>
 
+        {/* Time Range Filter */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <CalendarDays className="h-5 w-5 text-muted-foreground" />
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Periode:</span>
+                <Select value={timeRange} onValueChange={setTimeRange}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="today">Hari Ini</SelectItem>
+                    <SelectItem value="7days">7 Hari Terakhir</SelectItem>
+                    <SelectItem value="30days">30 Hari Terakhir</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Metrics Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Jumlah Chat Hari Ini - Visible to all roles */}
@@ -117,7 +225,9 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Jumlah Chat Hari Ini</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Jumlah Chat {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : '30 Hari'}
+                  </p>
                   <p className="text-2xl font-bold text-blue-600">{metrics.chatToday}</p>
                 </div>
                 <MessageSquare className="h-8 w-8 text-blue-500" />
@@ -131,7 +241,9 @@ const Dashboard = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Jumlah Keluhan Hari Ini</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Jumlah Keluhan {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : '30 Hari'}
+                    </p>
                     <p className="text-2xl font-bold text-red-600">{metrics.complaintsToday}</p>
                   </div>
                   <AlertTriangle className="h-8 w-8 text-red-500" />
@@ -146,7 +258,9 @@ const Dashboard = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Jumlah Checkout Hari Ini</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Jumlah Checkout {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : '30 Hari'}
+                    </p>
                     <p className="text-2xl font-bold text-green-600">{metrics.checkoutToday}</p>
                   </div>
                   <ShoppingCart className="h-8 w-8 text-green-500" />
@@ -162,10 +276,12 @@ const Dashboard = () => {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Customer Journey Hari Ini</p>
-                    <p className="text-2xl font-bold text-purple-600">{metrics.customerJourneyToday}</p>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Customer Journey {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : '30 Hari'}
+                  </p>
+                  <p className="text-2xl font-bold text-purple-600">{metrics.customerJourneyToday}</p>
+                </div>
                   <Navigation className="h-8 w-8 text-purple-500" />
                 </div>
               </CardContent>

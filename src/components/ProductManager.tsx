@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Product {
   id: string;
-  product_id: number;
+  produk_id: string;
   nama: string;
   deskripsi: string;
   kategori: string;

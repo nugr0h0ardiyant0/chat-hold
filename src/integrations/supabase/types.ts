@@ -91,7 +91,7 @@ export type Database = {
             columns: ["produk_id"]
             isOneToOne: false
             referencedRelation: "Produk"
-            referencedColumns: ["id"]
+            referencedColumns: ["produk_id"]
           },
         ]
       }
@@ -263,7 +263,7 @@ export type Database = {
           id: string
           kategori: string | null
           nama: string
-          product_id: number
+          produk_id: string | null
           stok: number | null
           ukuran: string | null
           updated_at: string | null
@@ -277,7 +277,7 @@ export type Database = {
           id: string
           kategori?: string | null
           nama: string
-          product_id?: number
+          produk_id?: string | null
           stok?: number | null
           ukuran?: string | null
           updated_at?: string | null
@@ -291,7 +291,7 @@ export type Database = {
           id?: string
           kategori?: string | null
           nama?: string
-          product_id?: number
+          produk_id?: string | null
           stok?: number | null
           ukuran?: string | null
           updated_at?: string | null
@@ -471,6 +471,22 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_chat_metrics_range: {
+        Args: { start_date: string; end_date: string }
+        Returns: number
+      }
+      get_checkout_metrics_range: {
+        Args: { start_date: string; end_date: string }
+        Returns: number
+      }
+      get_complaints_metrics_range: {
+        Args: { start_date: string; end_date: string }
+        Returns: number
+      }
+      get_customer_journey_metrics_range: {
+        Args: { start_date: string; end_date: string }
+        Returns: number
+      }
       get_customer_journeys: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -486,7 +502,7 @@ export type Database = {
         }[]
       }
       get_daily_customer_journey_metrics: {
-        Args: Record<PropertyKey, never>
+        Args: Record<PropertyKey, never> | { target_date?: string }
         Returns: number
       }
       get_follow_up_count: {
