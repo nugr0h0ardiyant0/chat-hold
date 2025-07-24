@@ -45,6 +45,9 @@ const CustomerJourneyManager = () => {
     uniqueCustomers: 0
   });
 
+  const [timeFilter, setTimeFilter] = useState('today');
+  const [stageMetrics, setStageMetrics] = useState<{[key: string]: number}>({});
+
   const [formData, setFormData] = useState({
     phone_number: '',
     customer_journey: 'pelanggan_tanya',
@@ -66,6 +69,7 @@ const CustomerJourneyManager = () => {
   useEffect(() => {
     fetchJourneys();
     fetchMetrics();
+    fetchStageMetrics();
 
     // Set up real-time subscription for CustomerJourney table
     const channel = supabase
@@ -75,6 +79,7 @@ const CustomerJourneyManager = () => {
         () => {
           fetchJourneys();
           fetchMetrics();
+          fetchStageMetrics();
         }
       )
       .subscribe();
@@ -83,6 +88,10 @@ const CustomerJourneyManager = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  useEffect(() => {
+    fetchStageMetrics();
+  }, [timeFilter]);
 
   const fetchJourneys = async () => {
     try {
@@ -116,6 +125,60 @@ const CustomerJourneyManager = () => {
       }
     } catch (error) {
       console.error('Error fetching metrics:', error);
+    }
+  };
+
+  const getDateRange = (filter: string) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (filter) {
+      case 'today':
+        return { start: today, end: today };
+      case '7days':
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        return { start: sevenDaysAgo, end: today };
+      case '30days':
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return { start: thirtyDaysAgo, end: today };
+      case '1year':
+        const oneYearAgo = new Date(today);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        return { start: oneYearAgo, end: today };
+      default:
+        return { start: today, end: today };
+    }
+  };
+
+  const fetchStageMetrics = async () => {
+    try {
+      const { start, end } = getDateRange(timeFilter);
+      const startDate = start.toISOString().split('T')[0];
+      const endDate = end.toISOString().split('T')[0];
+
+      const { data, error } = await supabase
+        .rpc('get_customer_journey_stage_metrics', {
+          start_date: startDate,
+          end_date: endDate
+        });
+
+      if (error) throw error;
+
+      const stageData: {[key: string]: number} = {};
+      journeyTypes.forEach(stage => {
+        stageData[stage] = 0;
+      });
+
+      data?.forEach((item: any) => {
+        stageData[item.customer_journey] = Number(item.count);
+      });
+
+      setStageMetrics(stageData);
+    } catch (error) {
+      console.error('Error fetching stage metrics:', error);
+      toast.error('Gagal memuat metrics tahap journey');
     }
   };
 
@@ -287,6 +350,64 @@ const CustomerJourneyManager = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Journey Stage Summary */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Summary Customer Journey per Tahap
+              </CardTitle>
+              <CardDescription>
+                Jumlah pelanggan di setiap tahap journey
+              </CardDescription>
+            </div>
+            <Select value={timeFilter} onValueChange={setTimeFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Hari Ini</SelectItem>
+                <SelectItem value="7days">7 Hari</SelectItem>
+                <SelectItem value="30days">30 Hari</SelectItem>
+                <SelectItem value="1year">1 Tahun</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {journeyTypes.map((stage) => (
+              <Card key={stage} className="border-l-4" style={{borderLeftColor: getJourneyBadgeColor(stage).includes('blue') ? '#3b82f6' : 
+                getJourneyBadgeColor(stage).includes('green') ? '#10b981' :
+                getJourneyBadgeColor(stage).includes('yellow') ? '#f59e0b' :
+                getJourneyBadgeColor(stage).includes('red') ? '#ef4444' :
+                getJourneyBadgeColor(stage).includes('emerald') ? '#059669' :
+                getJourneyBadgeColor(stage).includes('purple') ? '#8b5cf6' : '#6b7280'}}>
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Badge className={getJourneyBadgeColor(stage)} variant="secondary">
+                        {getJourneyDisplayName(stage)}
+                      </Badge>
+                    </div>
+                    <div className="text-2xl font-bold text-primary">
+                      {stageMetrics[stage] || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {timeFilter === 'today' ? 'Hari ini' : 
+                       timeFilter === '7days' ? '7 hari terakhir' :
+                       timeFilter === '30days' ? '30 hari terakhir' : '1 tahun terakhir'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Header */}
       <Card>

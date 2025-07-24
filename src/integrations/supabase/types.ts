@@ -487,6 +487,13 @@ export type Database = {
         Args: { start_date: string; end_date: string }
         Returns: number
       }
+      get_customer_journey_stage_metrics: {
+        Args: { start_date: string; end_date: string }
+        Returns: {
+          customer_journey: string
+          count: number
+        }[]
+      }
       get_customer_journeys: {
         Args: Record<PropertyKey, never>
         Returns: {
