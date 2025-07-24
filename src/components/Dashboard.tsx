@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { 
   MessageSquare, 
   AlertTriangle, 
@@ -20,7 +21,8 @@ import {
   Shield,
   Navigation,
   CalendarDays,
-  Download
+  Download,
+  TrendingUp
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,6 +36,39 @@ const Dashboard = () => {
     followUpNeeded: 0
   });
   const [timeRange, setTimeRange] = useState('today');
+  const [dailyMetrics, setDailyMetrics] = useState<any[]>([]);
+
+  const fetchDailyMetrics = async () => {
+    try {
+      const { start, end } = getDateRange('30days'); // Always show last 30 days for chart
+      const startDate = start.toISOString().split('T')[0];
+      const endDate = end.toISOString().split('T')[0];
+
+      const { data, error } = await supabase
+        .rpc('get_daily_metrics_range', {
+          start_date: startDate,
+          end_date: endDate
+        });
+
+      if (error) throw error;
+
+      const formattedData = data?.map((item: any) => ({
+        date: new Date(item.date).toLocaleDateString('id-ID', { 
+          month: 'short', 
+          day: 'numeric' 
+        }),
+        chat: item.total_chats || 0,
+        keluhan: item.total_complaints || 0,
+        checkout: item.total_checkouts || 0,
+        journey: item.pelanggan_tanya + item.masuk_keranjang + item.inisiasi_payment_belum_bayar + 
+                item.invoice_gagal_bayar + item.sudah_bayar + item.keluhan || 0
+      })) || [];
+
+      setDailyMetrics(formattedData);
+    } catch (error) {
+      console.error('Error fetching daily metrics:', error);
+    }
+  };
 
   const downloadCSV = async (type: 'chat' | 'complaints' | 'checkout') => {
     try {
@@ -209,6 +244,7 @@ const Dashboard = () => {
     };
 
     fetchMetrics();
+    fetchDailyMetrics();
 
     // Set up real-time subscriptions
     const customerJourneyChannel = supabase
@@ -408,6 +444,78 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Historical Charts - Admin only */}
+        {isAdmin && dailyMetrics.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Grafik Perkembangan Harian (30 Hari Terakhir)
+              </CardTitle>
+              <CardDescription>
+                Tracking perkembangan metrics dari hari ke hari
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dailyMetrics}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '6px'
+                      }}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="chat" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      name="Chat"
+                      dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="keluhan" 
+                      stroke="#ef4444" 
+                      strokeWidth={2}
+                      name="Keluhan"
+                      dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="checkout" 
+                      stroke="#10b981" 
+                      strokeWidth={2}
+                      name="Checkout"
+                      dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="journey" 
+                      stroke="#8b5cf6" 
+                      strokeWidth={2}
+                      name="Customer Journey"
+                      dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Main Content Tabs */}
