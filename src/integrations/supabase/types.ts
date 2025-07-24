@@ -131,6 +131,54 @@ export type Database = {
         }
         Relationships: []
       }
+      DailyMetrics: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: number
+          inisiasi_payment_belum_bayar: number | null
+          invoice_gagal_bayar: number | null
+          keluhan: number | null
+          masuk_keranjang: number | null
+          pelanggan_tanya: number | null
+          sudah_bayar: number | null
+          total_chats: number | null
+          total_checkouts: number | null
+          total_complaints: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          id?: number
+          inisiasi_payment_belum_bayar?: number | null
+          invoice_gagal_bayar?: number | null
+          keluhan?: number | null
+          masuk_keranjang?: number | null
+          pelanggan_tanya?: number | null
+          sudah_bayar?: number | null
+          total_chats?: number | null
+          total_checkouts?: number | null
+          total_complaints?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: number
+          inisiasi_payment_belum_bayar?: number | null
+          invoice_gagal_bayar?: number | null
+          keluhan?: number | null
+          masuk_keranjang?: number | null
+          pelanggan_tanya?: number | null
+          sudah_bayar?: number | null
+          total_chats?: number | null
+          total_checkouts?: number | null
+          total_complaints?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           content: string | null
@@ -512,6 +560,21 @@ export type Database = {
         Args: Record<PropertyKey, never> | { target_date?: string }
         Returns: number
       }
+      get_daily_metrics_range: {
+        Args: { start_date: string; end_date: string }
+        Returns: {
+          date: string
+          total_chats: number
+          total_complaints: number
+          total_checkouts: number
+          pelanggan_tanya: number
+          masuk_keranjang: number
+          inisiasi_payment_belum_bayar: number
+          invoice_gagal_bayar: number
+          sudah_bayar: number
+          keluhan: number
+        }[]
+      }
       get_follow_up_count: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -592,6 +655,10 @@ export type Database = {
       sparsevec_typmod_in: {
         Args: { "": unknown[] }
         Returns: number
+      }
+      store_daily_metrics: {
+        Args: { target_date?: string }
+        Returns: undefined
       }
       update_customer_journey: {
         Args: {

@@ -1,1 +1,4 @@
 project_id = "abwtufgltoxcwatykksm"
+
+[functions.store-daily-metrics]
+verify_jwt = false
