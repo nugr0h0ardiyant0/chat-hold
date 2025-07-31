@@ -9,14 +9,15 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Pembelian {
   id: string;
-  nama_penerima: string;
-  no_hp_penerima: string;
-  alamat_penerima: string;
-  ringkasan: string;
-  total_pembayaran: number;
-  proses: boolean;
-  created_at: string;
-  updated_at: string;
+  nama_penerima?: string;
+  no_hp_penerima?: string;
+  alamat_penerima?: string;
+  ringkasan?: string;
+  total_pembayaran?: number;
+  proses?: boolean;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const PembelianManager = () => {
@@ -33,7 +34,7 @@ const PembelianManager = () => {
     setIsRefreshing(true);
     try {
       const { data, error } = await supabase
-        .from('pembelian')
+        .from('Order')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -62,7 +63,7 @@ const PembelianManager = () => {
   const updateProses = async (id: string, proses: boolean) => {
     try {
       const { error } = await supabase
-        .from('pembelian')
+        .from('Order')
         .update({ proses, updated_at: new Date().toISOString() })
         .eq('id', id);
 
@@ -89,13 +90,13 @@ const PembelianManager = () => {
 
     // Set up real-time subscription
     const channel = supabase
-      .channel('pembelian-changes')
+      .channel('order-changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'pembelian'
+          table: 'Order'
         },
         () => {
           fetchPembelian();
@@ -179,13 +180,18 @@ const PembelianManager = () => {
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-primary" />
-                          <span className="font-mono text-sm text-muted-foreground">#{item.id}</span>
-                          <Badge variant={item.proses ? "default" : "secondary"}>
-                            {item.proses ? 'Sedang Diproses' : 'Belum Diproses'}
-                          </Badge>
-                        </div>
+                         <div className="flex items-center gap-2">
+                           <Package className="h-4 w-4 text-primary" />
+                           <span className="font-mono text-sm text-muted-foreground">#{item.id}</span>
+                           <Badge variant={item.proses ? "default" : "secondary"}>
+                             {item.proses ? 'Sedang Diproses' : 'Belum Diproses'}
+                           </Badge>
+                           {item.status && (
+                             <Badge variant="outline">
+                               {item.status}
+                             </Badge>
+                           )}
+                         </div>
                         
                         <div className="flex items-center gap-2 text-sm">
                           <User className="h-4 w-4 text-muted-foreground" />

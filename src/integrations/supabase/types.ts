@@ -267,7 +267,10 @@ export type Database = {
           id: string
           nama_penerima: string | null
           no_hp_penerima: string | null
+          proses: boolean
+          ringkasan: string | null
           status: string | null
+          total_pembayaran: number | null
           updated_at: string | null
         }
         Insert: {
@@ -276,7 +279,10 @@ export type Database = {
           id: string
           nama_penerima?: string | null
           no_hp_penerima?: string | null
+          proses?: boolean
+          ringkasan?: string | null
           status?: string | null
+          total_pembayaran?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -285,7 +291,10 @@ export type Database = {
           id?: string
           nama_penerima?: string | null
           no_hp_penerima?: string | null
+          proses?: boolean
+          ringkasan?: string | null
           status?: string | null
+          total_pembayaran?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -335,42 +344,6 @@ export type Database = {
           session?: string | null
           status?: string | null
           updated_at?: string | null
-        }
-        Relationships: []
-      }
-      pembelian: {
-        Row: {
-          alamat_penerima: string | null
-          created_at: string
-          id: string
-          nama_penerima: string | null
-          no_hp_penerima: string | null
-          proses: boolean
-          ringkasan: string | null
-          total_pembayaran: number | null
-          updated_at: string
-        }
-        Insert: {
-          alamat_penerima?: string | null
-          created_at?: string
-          id: string
-          nama_penerima?: string | null
-          no_hp_penerima?: string | null
-          proses?: boolean
-          ringkasan?: string | null
-          total_pembayaran?: number | null
-          updated_at?: string
-        }
-        Update: {
-          alamat_penerima?: string | null
-          created_at?: string
-          id?: string
-          nama_penerima?: string | null
-          no_hp_penerima?: string | null
-          proses?: boolean
-          ringkasan?: string | null
-          total_pembayaran?: number | null
-          updated_at?: string
         }
         Relationships: []
       }
@@ -576,6 +549,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_update_daily_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
