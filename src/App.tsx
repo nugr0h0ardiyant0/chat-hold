@@ -6,7 +6,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "@/components/Dashboard";
+import HoldManager from "@/components/HoldManager";
+import CustomerJourneyManager from "@/components/CustomerJourneyManager";
+import KeluhaneManager from "@/components/KeluhaneManager";
+import ProductManager from "@/components/ProductManager";
+import PromoManager from "@/components/PromoManager";
+import PembelianManager from "@/components/PembelianManager";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AppLayout from "@/components/AppLayout";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,7 +29,51 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/" element={
               <ProtectedRoute>
-                <Dashboard />
+                <AppLayout>
+                  <HoldManager />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Dashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/customer-journey" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <CustomerJourneyManager />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/keluhan" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <KeluhaneManager />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/produk" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ProductManager />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/promo" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <PromoManager />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/pembelian" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <PembelianManager />
+                </AppLayout>
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

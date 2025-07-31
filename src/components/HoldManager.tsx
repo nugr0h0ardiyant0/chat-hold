@@ -145,18 +145,12 @@ const HoldManager = () => {
   return (
     <div className="space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <Shield className="h-8 w-8 text-primary" />
-            </div>
-          </div>
+        <div>
           <h1 className="text-3xl font-bold text-foreground">
-            Pengelola Responder WhatsApp
+            Hold Manager
           </h1>
           <p className="text-muted-foreground">
-            Kelola nomor telepon yang harus diblokir dari menerima respons WhatsApp
-            otomatis. Tambahkan nomor ke daftar hold untuk mencegah respons bot.
+            Kelola nomor telepon yang harus diblokir dari menerima respons WhatsApp otomatis
           </p>
         </div>
 
@@ -305,19 +299,19 @@ const HoldManager = () => {
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-foreground">{totalUsers}</div>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-primary">{totalUsers}</div>
               <p className="text-sm text-muted-foreground">Total Nomor</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="text-2xl font-bold text-warning">{heldUsers.length}</div>
               <p className="text-sm text-muted-foreground">Sedang Hold</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="text-2xl font-bold text-success">{totalUsers - heldUsers.length}</div>
               <p className="text-sm text-muted-foreground">Aktif</p>
             </CardContent>
