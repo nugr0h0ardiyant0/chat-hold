@@ -18,12 +18,13 @@ import {
   Users, 
   Package, 
   Percent,
-  Shield,
   Navigation,
   CalendarDays,
   Download,
-  TrendingUp
+  TrendingUp,
+  Filter
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
@@ -37,6 +38,12 @@ const Dashboard = () => {
   });
   const [timeRange, setTimeRange] = useState('today');
   const [dailyMetrics, setDailyMetrics] = useState<any[]>([]);
+  const [chartFilters, setChartFilters] = useState({
+    chat: true,
+    keluhan: true,
+    checkout: true,
+    journey: true
+  });
 
   const fetchDailyMetrics = async () => {
     try {
@@ -44,6 +51,7 @@ const Dashboard = () => {
       const startDate = start.toISOString().split('T')[0];
       const endDate = end.toISOString().split('T')[0];
 
+      // Try to use the metrics function first
       const { data, error } = await supabase
         .rpc('get_daily_metrics_range', {
           start_date: startDate,
@@ -52,21 +60,97 @@ const Dashboard = () => {
 
       if (error) throw error;
 
-      const formattedData = data?.map((item: any) => ({
-        date: new Date(item.date).toLocaleDateString('id-ID', { 
-          month: 'short', 
-          day: 'numeric' 
-        }),
-        chat: item.total_chats || 0,
-        keluhan: item.total_complaints || 0,
-        checkout: item.total_checkouts || 0,
-        journey: item.pelanggan_tanya + item.masuk_keranjang + item.inisiasi_payment_belum_bayar + 
-                item.invoice_gagal_bayar + item.sudah_bayar + item.keluhan || 0
-      })) || [];
+      if (data && data.length > 0) {
+        const formattedData = data.map((item: any) => ({
+          date: new Date(item.date).toLocaleDateString('id-ID', { 
+            month: 'short', 
+            day: 'numeric' 
+          }),
+          chat: item.total_chats || 0,
+          keluhan: item.total_complaints || 0,
+          checkout: item.total_checkouts || 0,
+          journey: (item.pelanggan_tanya || 0) + (item.masuk_keranjang || 0) + 
+                  (item.inisiasi_payment_belum_bayar || 0) + (item.invoice_gagal_bayar || 0) + 
+                  (item.sudah_bayar || 0) + (item.keluhan || 0)
+        }));
 
-      setDailyMetrics(formattedData);
+        setDailyMetrics(formattedData);
+      } else {
+        // Fallback: generate data manually by querying each table
+        await generateFallbackMetrics(startDate, endDate);
+      }
     } catch (error) {
-      console.error('Error fetching daily metrics:', error);
+      console.error('Error fetching daily metrics, using fallback:', error);
+      // Fallback: generate data manually
+      const { start, end } = getDateRange('30days');
+      const startDate = start.toISOString().split('T')[0];
+      const endDate = end.toISOString().split('T')[0];
+      await generateFallbackMetrics(startDate, endDate);
+    }
+  };
+
+  const generateFallbackMetrics = async (startDate: string, endDate: string) => {
+    try {
+      const dates = [];
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dates.push(new Date(d));
+      }
+
+      const metricsData = await Promise.all(
+        dates.map(async (date) => {
+          const dateStr = date.toISOString().split('T')[0];
+          
+          // Get chat data (unique users per day)
+          const { data: chatData } = await supabase
+            .from('User')
+            .select('phone_number')
+            .gte('updated_at', dateStr)
+            .lt('updated_at', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+          
+          const uniqueChats = new Set(chatData?.map(item => item.phone_number) || []).size;
+
+          // Get complaints data
+          const { data: complaintsData } = await supabase
+            .from('Keluhan')
+            .select('id')
+            .gte('Datetime', dateStr)
+            .lt('Datetime', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+          // Get checkout data
+          const { data: checkoutData } = await supabase
+            .from('Order')
+            .select('id')
+            .eq('status', 'PROCESSING')
+            .gte('created_at', dateStr)
+            .lt('created_at', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+          // Get customer journey data
+          const { data: journeyData } = await supabase
+            .from('CustomerJourney')
+            .select('id')
+            .gte('created_at', dateStr)
+            .lt('created_at', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+          return {
+            date: date.toLocaleDateString('id-ID', { 
+              month: 'short', 
+              day: 'numeric' 
+            }),
+            chat: uniqueChats,
+            keluhan: complaintsData?.length || 0,
+            checkout: checkoutData?.length || 0,
+            journey: journeyData?.length || 0
+          };
+        })
+      );
+
+      setDailyMetrics(metricsData);
+    } catch (error) {
+      console.error('Error generating fallback metrics:', error);
+      setDailyMetrics([]);
     }
   };
 
@@ -436,13 +520,70 @@ const Dashboard = () => {
         {isAdmin && dailyMetrics.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Grafik Perkembangan Harian (30 Hari Terakhir)
-              </CardTitle>
-              <CardDescription>
-                Tracking perkembangan metrics dari hari ke hari
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Grafik Perkembangan Harian (30 Hari Terakhir)
+                  </CardTitle>
+                  <CardDescription>
+                    Tracking perkembangan metrics dari hari ke hari
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="chat-filter" 
+                        checked={chartFilters.chat}
+                        onCheckedChange={(checked) => 
+                          setChartFilters(prev => ({ ...prev, chat: checked as boolean }))
+                        }
+                      />
+                      <label htmlFor="chat-filter" className="text-sm font-medium text-blue-600">
+                        Chat
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="keluhan-filter" 
+                        checked={chartFilters.keluhan}
+                        onCheckedChange={(checked) => 
+                          setChartFilters(prev => ({ ...prev, keluhan: checked as boolean }))
+                        }
+                      />
+                      <label htmlFor="keluhan-filter" className="text-sm font-medium text-red-600">
+                        Keluhan
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="checkout-filter" 
+                        checked={chartFilters.checkout}
+                        onCheckedChange={(checked) => 
+                          setChartFilters(prev => ({ ...prev, checkout: checked as boolean }))
+                        }
+                      />
+                      <label htmlFor="checkout-filter" className="text-sm font-medium text-green-600">
+                        Checkout
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="journey-filter" 
+                        checked={chartFilters.journey}
+                        onCheckedChange={(checked) => 
+                          setChartFilters(prev => ({ ...prev, journey: checked as boolean }))
+                        }
+                      />
+                      <label htmlFor="journey-filter" className="text-sm font-medium text-purple-600">
+                        Customer Journey
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="h-80">
@@ -458,45 +599,58 @@ const Dashboard = () => {
                     />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip 
+                      labelStyle={{ color: '#000' }}
                       contentStyle={{ 
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '6px'
+                        backgroundColor: '#fff', 
+                        border: '1px solid #ccc',
+                        borderRadius: '8px'
                       }}
                     />
                     <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="chat" 
-                      stroke="#3b82f6" 
-                      strokeWidth={2}
-                      name="Chat"
-                      dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="keluhan" 
-                      stroke="#ef4444" 
-                      strokeWidth={2}
-                      name="Keluhan"
-                      dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="checkout" 
-                      stroke="#10b981" 
-                      strokeWidth={2}
-                      name="Checkout"
-                      dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="journey" 
-                      stroke="#8b5cf6" 
-                      strokeWidth={2}
-                      name="Customer Journey"
-                      dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
-                    />
+                    {chartFilters.chat && (
+                      <Line 
+                        type="monotone" 
+                        dataKey="chat" 
+                        stroke="#2563eb" 
+                        strokeWidth={2}
+                        name="Chat"
+                        dot={{ fill: '#2563eb', strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: '#2563eb', strokeWidth: 2, fill: '#fff' }}
+                      />
+                    )}
+                    {chartFilters.keluhan && (
+                      <Line 
+                        type="monotone" 
+                        dataKey="keluhan" 
+                        stroke="#dc2626" 
+                        strokeWidth={2}
+                        name="Keluhan"
+                        dot={{ fill: '#dc2626', strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: '#dc2626', strokeWidth: 2, fill: '#fff' }}
+                      />
+                    )}
+                    {chartFilters.checkout && (
+                      <Line 
+                        type="monotone" 
+                        dataKey="checkout" 
+                        stroke="#16a34a" 
+                        strokeWidth={2}
+                        name="Checkout"
+                        dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: '#16a34a', strokeWidth: 2, fill: '#fff' }}
+                      />
+                    )}
+                    {chartFilters.journey && (
+                      <Line 
+                        type="monotone" 
+                        dataKey="journey" 
+                        stroke="#9333ea" 
+                        strokeWidth={2}
+                        name="Customer Journey"
+                        dot={{ fill: '#9333ea', strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: '#9333ea', strokeWidth: 2, fill: '#fff' }}
+                      />
+                    )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
