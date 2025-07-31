@@ -338,6 +338,42 @@ export type Database = {
         }
         Relationships: []
       }
+      pembelian: {
+        Row: {
+          alamat_penerima: string | null
+          created_at: string
+          id: string
+          nama_penerima: string | null
+          no_hp_penerima: string | null
+          proses: boolean
+          ringkasan: string | null
+          total_pembayaran: number | null
+          updated_at: string
+        }
+        Insert: {
+          alamat_penerima?: string | null
+          created_at?: string
+          id: string
+          nama_penerima?: string | null
+          no_hp_penerima?: string | null
+          proses?: boolean
+          ringkasan?: string | null
+          total_pembayaran?: number | null
+          updated_at?: string
+        }
+        Update: {
+          alamat_penerima?: string | null
+          created_at?: string
+          id?: string
+          nama_penerima?: string | null
+          no_hp_penerima?: string | null
+          proses?: boolean
+          ringkasan?: string | null
+          total_pembayaran?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       Produk: {
         Row: {
           berat: number | null
