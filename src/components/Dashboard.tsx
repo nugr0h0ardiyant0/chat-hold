@@ -257,7 +257,7 @@ const Dashboard = () => {
             chatToday: chatData.data || 0,
             complaintsToday: complaintsData.data || 0,
             checkoutToday: checkoutData.data || 0,
-            customerJourneyToday: 0, // Not needed anymore
+            customerJourneyToday: 0, // Removed - not needed anymore
             followUpNeeded: followUpData.data || 0
           });
         } catch (error) {
@@ -479,22 +479,6 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Customer Journey Metrics - Admin only */}
-        {isAdmin && (
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Customer Journey {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : timeRange === '30days' ? '30 Hari' : '1 Tahun'}
-                  </p>
-                  <p className="text-2xl font-bold text-purple-600">{metrics.customerJourneyToday}</p>
-                </div>
-                <Navigation className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Historical Charts - Admin only */}
         {isAdmin && dailyMetrics.length > 0 && (

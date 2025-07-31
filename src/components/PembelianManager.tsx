@@ -33,18 +33,35 @@ const PembelianManager = () => {
   const fetchPembelian = async () => {
     setIsRefreshing(true);
     try {
-      const { data, error } = await supabase
+      // Get Orders first, then fetch corresponding Cart data
+      const { data: ordersData, error: ordersError } = await supabase
         .from('Order')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (ordersError) throw ordersError;
 
-      setPembelian(data || []);
+      // For each order, try to get the corresponding Cart ringkasan using the same ID
+      const ordersWithRingkasan = await Promise.all(
+        (ordersData || []).map(async (order) => {
+          const { data: cartData } = await supabase
+            .from('Cart')
+            .select('ringkasan')
+            .eq('id', order.id)
+            .single();
+          
+          return {
+            ...order,
+            ringkasan: cartData?.ringkasan || order.ringkasan || 'Tidak ada ringkasan'
+          };
+        })
+      );
+
+      setPembelian(ordersWithRingkasan);
       
       // Calculate summary
-      const total = data?.length || 0;
-      const proses = data?.filter(item => item.proses).length || 0;
+      const total = ordersWithRingkasan?.length || 0;
+      const proses = ordersWithRingkasan?.filter(item => item.proses).length || 0;
       const belum_proses = total - proses;
 
       setSummary({ total, proses, belum_proses });
@@ -209,10 +226,10 @@ const PembelianManager = () => {
                         </div>
                       </div>
                       
-                      <div className="text-right space-y-2">
-                        <div className="text-lg font-bold text-primary">
-                          Rp {item.total_pembayaran?.toLocaleString('id-ID') || '0'}
-                        </div>
+                       <div className="text-right space-y-2">
+                         <div className="text-lg font-bold text-primary">
+                           {item.total_pembayaran?.toLocaleString('id-ID') || '0'}
+                         </div>
                         <div className="text-xs text-muted-foreground flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {new Date(item.updated_at).toLocaleString('id-ID')}
