@@ -112,8 +112,8 @@ const Dashboard = () => {
           const { data: complaintsData } = await supabase
             .from('Keluhan')
             .select('id')
-            .gte('Datetime', dateStr + 'T00:00:00.000Z')
-            .lte('Datetime', dateStr + 'T23:59:59.999Z');
+            .filter('Datetime', 'gte', dateStr)
+            .filter('Datetime', 'lt', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
           // Get checkout data
           const { data: checkoutData } = await supabase
