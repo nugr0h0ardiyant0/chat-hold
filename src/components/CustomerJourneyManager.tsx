@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, RefreshCw, Clock, Phone } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MessageSquare, RefreshCw, Clock, Phone, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface CustomerJourney {
@@ -92,6 +93,30 @@ const CustomerJourneyManager = () => {
         variant: "destructive",
       });
       console.error('Error toggling follow up:', error);
+    }
+  };
+
+  const updateCustomerJourney = async (journeyId: number, newStage: string) => {
+    try {
+      const { error } = await supabase
+        .from('CustomerJourney')
+        .update({ customer_journey: newStage, updated_at: new Date().toISOString() })
+        .eq('id', journeyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Status customer journey berhasil diupdate",
+      });
+      fetchJourneys();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal mengupdate customer journey",
+        variant: "destructive",
+      });
+      console.error('Error updating customer journey:', error);
     }
   };
 
@@ -216,40 +241,60 @@ const CustomerJourneyManager = () => {
                   key={journey.id}
                   className="p-4 rounded-lg border bg-card"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-3">
-                        <Phone className="h-4 w-4 text-primary" />
-                        <span className="font-medium">{journey.phone_number}</span>
-                        <Badge className={getStageColor(journey.customer_journey)}>
-                          {formatStage(journey.customer_journey)}
-                        </Badge>
-                        {journey.follow_up && (
-                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                            Follow Up
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <Phone className="h-4 w-4 text-primary" />
+                          <span className="font-medium">{journey.phone_number}</span>
+                          <Badge className={getStageColor(journey.customer_journey)}>
+                            {formatStage(journey.customer_journey)}
                           </Badge>
-                        )}
+                          {journey.follow_up && (
+                            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                              Follow Up
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="text-sm text-muted-foreground">
+                          <p><span className="font-medium">Message:</span> {journey.message || '-'}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Edit className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">Status:</span>
+                          <Select
+                            value={journey.customer_journey}
+                            onValueChange={(value) => updateCustomerJourney(journey.id, value)}
+                          >
+                            <SelectTrigger className="w-48">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pelanggan_tanya">Pelanggan Tanya</SelectItem>
+                              <SelectItem value="masuk_keranjang">Masuk Keranjang</SelectItem>
+                              <SelectItem value="keluhan">Keluhan</SelectItem>
+                              <SelectItem value="sudah_bayar">Sudah Bayar</SelectItem>
+                              <SelectItem value="inisiasi_payment_belum_bayar">Inisiasi Payment Belum Bayar</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          Updated: {new Date(journey.updated_at).toLocaleString('id-ID')}
+                        </div>
                       </div>
                       
-                      <div className="text-sm text-muted-foreground">
-                        <p><span className="font-medium">Message:</span> {journey.message || '-'}</p>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        Updated: {new Date(journey.updated_at).toLocaleString('id-ID')}
-                      </div>
+                      <Button
+                        variant={journey.follow_up ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => toggleFollowUp(journey.id, journey.follow_up)}
+                        className="gap-2"
+                      >
+                        {journey.follow_up ? 'Remove Follow Up' : 'Set Follow Up'}
+                      </Button>
                     </div>
-                    
-                    <Button
-                      variant={journey.follow_up ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => toggleFollowUp(journey.id, journey.follow_up)}
-                      className="gap-2"
-                    >
-                      {journey.follow_up ? 'Remove Follow Up' : 'Set Follow Up'}
-                    </Button>
-                  </div>
                 </div>
               ))}
             </div>

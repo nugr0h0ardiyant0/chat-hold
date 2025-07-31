@@ -115,6 +115,60 @@ const HoldManager = () => {
     }
   };
 
+  const holdAllUsers = async () => {
+    try {
+      const { error } = await supabase
+        .from('User')
+        .update({
+          is_hold: true,
+          updated_at: new Date().toISOString(),
+        })
+        .neq('is_hold', true);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Semua pengguna berhasil di-hold",
+      });
+      fetchUsers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal melakukan hold massal",
+        variant: "destructive",
+      });
+      console.error('Error holding all users:', error);
+    }
+  };
+
+  const releaseAllUsers = async () => {
+    try {
+      const { error } = await supabase
+        .from('User')
+        .update({
+          is_hold: false,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('is_hold', true);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Semua pengguna berhasil dilepas dari hold",
+      });
+      fetchUsers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal melepas hold massal",
+        variant: "destructive",
+      });
+      console.error('Error releasing all users:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
 
@@ -206,16 +260,36 @@ const HoldManager = () => {
                 <Shield className="h-5 w-5" />
                 Daftar Hold ({heldUsers.length})
               </CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchUsers}
-                disabled={isRefreshing}
-                className="gap-2"
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={holdAllUsers}
+                  className="gap-2"
+                >
+                  <ShieldOff className="h-4 w-4" />
+                  Hold Semua
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={releaseAllUsers}
+                  className="gap-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  Lepas Semua
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchUsers}
+                  disabled={isRefreshing}
+                  className="gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>

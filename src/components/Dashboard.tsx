@@ -41,8 +41,7 @@ const Dashboard = () => {
   const [chartFilters, setChartFilters] = useState({
     chat: true,
     keluhan: true,
-    checkout: true,
-    journey: true
+    checkout: true
   });
 
   const fetchDailyMetrics = async () => {
@@ -68,10 +67,7 @@ const Dashboard = () => {
           }),
           chat: item.total_chats || 0,
           keluhan: item.total_complaints || 0,
-          checkout: item.total_checkouts || 0,
-          journey: (item.pelanggan_tanya || 0) + (item.masuk_keranjang || 0) + 
-                  (item.inisiasi_payment_belum_bayar || 0) + (item.invoice_gagal_bayar || 0) + 
-                  (item.sudah_bayar || 0) + (item.keluhan || 0)
+          checkout: item.total_checkouts || 0
         }));
 
         setDailyMetrics(formattedData);
@@ -127,12 +123,6 @@ const Dashboard = () => {
             .gte('created_at', dateStr)
             .lt('created_at', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
-          // Get customer journey data
-          const { data: journeyData } = await supabase
-            .from('CustomerJourney')
-            .select('id')
-            .gte('created_at', dateStr)
-            .lt('created_at', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
           return {
             date: date.toLocaleDateString('id-ID', { 
@@ -141,8 +131,7 @@ const Dashboard = () => {
             }),
             chat: uniqueChats,
             keluhan: complaintsData?.length || 0,
-            checkout: checkoutData?.length || 0,
-            journey: journeyData?.length || 0
+            checkout: checkoutData?.length || 0
           };
         })
       );
@@ -257,11 +246,10 @@ const Dashboard = () => {
         
         // Use range functions if available, fallback to original queries
         try {
-          const [chatData, complaintsData, checkoutData, journeyData, followUpData] = await Promise.all([
+          const [chatData, complaintsData, checkoutData, followUpData] = await Promise.all([
             supabase.rpc('get_chat_metrics_range', { start_date: startDate, end_date: endDate }),
             supabase.rpc('get_complaints_metrics_range', { start_date: startDate, end_date: endDate }),
             supabase.rpc('get_checkout_metrics_range', { start_date: startDate, end_date: endDate }),
-            supabase.rpc('get_customer_journey_metrics_range', { start_date: startDate, end_date: endDate }),
             supabase.rpc('get_follow_up_count')
           ]);
 
@@ -269,7 +257,7 @@ const Dashboard = () => {
             chatToday: chatData.data || 0,
             complaintsToday: complaintsData.data || 0,
             checkoutToday: checkoutData.data || 0,
-            customerJourneyToday: journeyData.data || 0,
+            customerJourneyToday: 0, // Not needed anymore
             followUpNeeded: followUpData.data || 0
           });
         } catch (error) {
@@ -297,16 +285,8 @@ const Dashboard = () => {
             .gte('created_at', startDate)
             .lte('created_at', endDate + 'T23:59:59');
 
-          let journeyData = 0;
           let followUpData = 0;
           
-          try {
-            const { data: jData } = await supabase.rpc('get_customer_journey_metrics_range', { start_date: startDate, end_date: endDate });
-            journeyData = jData || 0;
-          } catch (error) {
-            console.log('Customer journey metrics function not available');
-          }
-
           try {
             const { data: fData } = await supabase.rpc('get_follow_up_count');
             followUpData = fData || 0;
@@ -318,7 +298,7 @@ const Dashboard = () => {
             chatToday: uniqueChats.size,
             complaintsToday: complaintsData?.length || 0,
             checkoutToday: checkoutData?.length || 0,
-            customerJourneyToday: journeyData || 0,
+            customerJourneyToday: 0, // Not needed anymore
             followUpNeeded: followUpData || 0
           });
         }
@@ -569,18 +549,6 @@ const Dashboard = () => {
                         Checkout
                       </label>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="journey-filter" 
-                        checked={chartFilters.journey}
-                        onCheckedChange={(checked) => 
-                          setChartFilters(prev => ({ ...prev, journey: checked as boolean }))
-                        }
-                      />
-                      <label htmlFor="journey-filter" className="text-sm font-medium text-purple-600">
-                        Customer Journey
-                      </label>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -638,17 +606,6 @@ const Dashboard = () => {
                         name="Checkout"
                         dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
                         activeDot={{ r: 6, stroke: '#16a34a', strokeWidth: 2, fill: '#fff' }}
-                      />
-                    )}
-                    {chartFilters.journey && (
-                      <Line 
-                        type="monotone" 
-                        dataKey="journey" 
-                        stroke="#9333ea" 
-                        strokeWidth={2}
-                        name="Customer Journey"
-                        dot={{ fill: '#9333ea', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6, stroke: '#9333ea', strokeWidth: 2, fill: '#fff' }}
                       />
                     )}
                   </LineChart>
