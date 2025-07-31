@@ -108,12 +108,12 @@ const Dashboard = () => {
           
           const uniqueChats = new Set(chatData?.map(item => item.phone_number) || []).size;
 
-          // Get complaints data
+          // Get complaints data - count from Keluhan table based on date
           const { data: complaintsData } = await supabase
             .from('Keluhan')
             .select('id')
-            .gte('Datetime', dateStr + 'T00:00:00')
-            .lt('Datetime', dateStr + 'T23:59:59');
+            .gte('Datetime', dateStr + 'T00:00:00.000Z')
+            .lte('Datetime', dateStr + 'T23:59:59.999Z');
 
           // Get checkout data
           const { data: checkoutData } = await supabase
