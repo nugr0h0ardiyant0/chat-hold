@@ -227,9 +227,6 @@ const PembelianManager = () => {
                       </div>
                       
                        <div className="text-right space-y-2">
-                         <div className="text-lg font-bold text-primary">
-                           {item.total_pembayaran?.toLocaleString('id-ID') || '0'}
-                         </div>
                         <div className="text-xs text-muted-foreground flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {new Date(item.updated_at).toLocaleString('id-ID')}
