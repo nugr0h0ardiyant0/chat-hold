@@ -505,16 +505,8 @@ const Dashboard = () => {
         )}
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue={isAdmin ? "hold" : "promo"} className="space-y-4">
-          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-2'}`}>
-            {/* Hold Management Tab - Admin only */}
-            {isAdmin && (
-              <TabsTrigger value="hold" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Pengelola Hold
-              </TabsTrigger>
-            )}
-            
+        <Tabs defaultValue="promo" className="space-y-4">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-2'}`}>
             {/* Complaints Management Tab - Admin only */}
             {isAdmin && (
               <TabsTrigger value="keluhan" className="flex items-center gap-2">
@@ -543,15 +535,6 @@ const Dashboard = () => {
               Manajemen Produk
             </TabsTrigger>
           </TabsList>
-
-          {/* Hold Management Content - Admin only */}
-          {isAdmin && (
-            <TabsContent value="hold" className="space-y-4">
-              <div className="border rounded-lg p-1">
-                <HoldManager />
-              </div>
-            </TabsContent>
-          )}
 
           {/* Complaints Management Content - Admin only */}
           {isAdmin && (
@@ -588,7 +571,6 @@ const Dashboard = () => {
                 <ul className="list-disc list-inside mt-1 space-y-1">
                   {isAdmin ? (
                     <>
-                      <li>Pengelola Responder WhatsApp (Hold Management)</li>
                       <li>Manajemen Keluhan</li>
                       <li>Manajemen Customer Journey</li>
                       <li>Semua metrik operasional</li>
