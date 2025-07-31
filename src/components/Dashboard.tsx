@@ -504,62 +504,6 @@ const Dashboard = () => {
           </Card>
         )}
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="promo" className="space-y-4">
-          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-2'}`}>
-            {/* Complaints Management Tab - Admin only */}
-            {isAdmin && (
-              <TabsTrigger value="keluhan" className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Keluhan
-              </TabsTrigger>
-            )}
-
-            {/* Customer Journey Tab - Admin only */}
-            {isAdmin && (
-              <TabsTrigger value="customer-journey" className="flex items-center gap-2">
-                <Navigation className="h-4 w-4" />
-                Customer Journey
-              </TabsTrigger>
-            )}
-            
-            {/* Promo Management Tab - All roles */}
-            <TabsTrigger value="promo" className="flex items-center gap-2">
-              <Percent className="h-4 w-4" />
-              Manajemen Promo
-            </TabsTrigger>
-            
-            {/* Product Management Tab - All roles */}
-            <TabsTrigger value="product" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Manajemen Produk
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Complaints Management Content - Admin only */}
-          {isAdmin && (
-            <TabsContent value="keluhan" className="space-y-4">
-              <KeluhaneManager />
-            </TabsContent>
-          )}
-
-          {/* Customer Journey Management Content - Admin only */}
-          {isAdmin && (
-            <TabsContent value="customer-journey" className="space-y-4">
-              <CustomerJourneyManager />
-            </TabsContent>
-          )}
-
-          {/* Promo Management Content */}
-          <TabsContent value="promo" className="space-y-4">
-            <PromoManager />
-          </TabsContent>
-
-          {/* Product Management Content */}
-          <TabsContent value="product" className="space-y-4">
-            <ProductManager />
-          </TabsContent>
-        </Tabs>
 
         {/* Role Information */}
         <Card>
