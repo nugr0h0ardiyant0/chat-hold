@@ -102,17 +102,17 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Menu Utama</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-2">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={item.url} 
-                      className={getNavClass(item.url)}
+                      className={`px-4 py-3 rounded-lg transition-colors ${getNavClass(item.url)}`}
                     >
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-5 w-5" />
                       {state !== "collapsed" && (
-                        <div className="flex flex-col">
+                        <div className="flex flex-col ml-3">
                           <span className="text-sm font-medium">{item.title}</span>
                           <span className="text-xs opacity-60">{item.description}</span>
                         </div>

@@ -417,33 +417,19 @@ const Dashboard = () => {
 
         {/* Customer Journey Metrics - Admin only */}
         {isAdmin && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
                     Customer Journey {timeRange === 'today' ? 'Hari Ini' : timeRange === '7days' ? '7 Hari' : timeRange === '30days' ? '30 Hari' : '1 Tahun'}
                   </p>
                   <p className="text-2xl font-bold text-purple-600">{metrics.customerJourneyToday}</p>
                 </div>
-                  <Navigation className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Follow Up Diperlukan</p>
-                    <p className="text-2xl font-bold text-orange-600">{metrics.followUpNeeded}</p>
-                  </div>
-                  <MessageSquare className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                <Navigation className="h-8 w-8 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Historical Charts - Admin only */}
