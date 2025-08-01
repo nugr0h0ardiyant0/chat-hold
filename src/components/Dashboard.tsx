@@ -115,13 +115,13 @@ const Dashboard = () => {
             .filter('Datetime', 'gte', dateStr)
             .filter('Datetime', 'lt', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
-          // Get checkout data
+          // Get checkout data - using updated_at when status is PROCESSING
           const { data: checkoutData } = await supabase
             .from('Order')
             .select('id')
             .eq('status', 'PROCESSING')
-            .gte('created_at', dateStr)
-            .lt('created_at', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+            .gte('updated_at', dateStr)
+            .lt('updated_at', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
 
           return {
@@ -282,8 +282,8 @@ const Dashboard = () => {
             .from('Order')
             .select('id')
             .eq('status', 'PROCESSING')
-            .gte('created_at', startDate)
-            .lte('created_at', endDate + 'T23:59:59');
+            .gte('updated_at', startDate)
+            .lte('updated_at', endDate + 'T23:59:59');
 
           let followUpData = 0;
           
@@ -480,18 +480,18 @@ const Dashboard = () => {
         </div>
 
 
-        {/* Historical Charts - Admin only */}
-        {isAdmin && dailyMetrics.length > 0 && (
+        {/* Grafik Perkembangan Harian - Admin only */}
+        {isAdmin && (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5" />
-                    Grafik Perkembangan Harian (30 Hari Terakhir)
+                    Grafik Perkembangan Harian
                   </CardTitle>
                   <CardDescription>
-                    Tracking perkembangan metrics dari hari ke hari
+                    Data Chat (User), Keluhan, dan Checkout dari hari ke hari
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-4">
@@ -565,7 +565,7 @@ const Dashboard = () => {
                         dataKey="chat" 
                         stroke="#2563eb" 
                         strokeWidth={2}
-                        name="Chat"
+                        name="Chat (User)"
                         dot={{ fill: '#2563eb', strokeWidth: 2, r: 4 }}
                         activeDot={{ r: 6, stroke: '#2563eb', strokeWidth: 2, fill: '#fff' }}
                       />
@@ -587,7 +587,7 @@ const Dashboard = () => {
                         dataKey="checkout" 
                         stroke="#16a34a" 
                         strokeWidth={2}
-                        name="Checkout"
+                        name="Checkout (PROCESSING)"
                         dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
                         activeDot={{ r: 6, stroke: '#16a34a', strokeWidth: 2, fill: '#fff' }}
                       />
