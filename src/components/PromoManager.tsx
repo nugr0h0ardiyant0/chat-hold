@@ -11,15 +11,13 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Promo {
-  id: string;
-  judul_promo: string;
-  nama: string;
+  kategori: string;
+  product_id: string;
   deskripsi: string;
   tanggal_mulai: string;
   tanggal_selesai: string;
-  syarat_ketentuan: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const PromoManager = () => {
@@ -30,12 +28,11 @@ const PromoManager = () => {
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    judul_promo: '',
-    nama: '',
+    kategori: '',
+    product_id: '',
     deskripsi: '',
     tanggal_mulai: '',
-    tanggal_selesai: '',
-    syarat_ketentuan: ''
+    tanggal_selesai: ''
   });
 
   useEffect(() => {
@@ -63,12 +60,11 @@ const PromoManager = () => {
 
   const resetForm = () => {
     setFormData({
-      judul_promo: '',
-      nama: '',
+      kategori: '',
+      product_id: '',
       deskripsi: '',
       tanggal_mulai: '',
-      tanggal_selesai: '',
-      syarat_ketentuan: ''
+      tanggal_selesai: ''
     });
     setEditingPromo(null);
   };
@@ -88,7 +84,8 @@ const PromoManager = () => {
         const { error } = await supabase
           .from('Promo')
           .update({ ...promoData, updated_at: new Date().toISOString() })
-          .eq('id', editingPromo.id);
+          .eq('kategori', editingPromo.kategori)
+          .eq('product_id', editingPromo.product_id);
 
         if (error) throw error;
 
@@ -99,7 +96,7 @@ const PromoManager = () => {
       } else {
         const { error } = await supabase
           .from('Promo')
-          .insert(promoData as any);
+          .insert(promoData);
 
         if (error) throw error;
 
@@ -127,24 +124,24 @@ const PromoManager = () => {
   const handleEdit = (promo: Promo) => {
     setEditingPromo(promo);
     setFormData({
-      judul_promo: promo.judul_promo || '',
-      nama: promo.nama,
+      kategori: promo.kategori || '',
+      product_id: promo.product_id || '',
       deskripsi: promo.deskripsi || '',
       tanggal_mulai: promo.tanggal_mulai ? new Date(promo.tanggal_mulai).toISOString().split('T')[0] : '',
-      tanggal_selesai: promo.tanggal_selesai ? new Date(promo.tanggal_selesai).toISOString().split('T')[0] : '',
-      syarat_ketentuan: promo.syarat_ketentuan || ''
+      tanggal_selesai: promo.tanggal_selesai ? new Date(promo.tanggal_selesai).toISOString().split('T')[0] : ''
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (kategori: string, product_id: string) => {
     if (!confirm('Apakah Anda yakin ingin menghapus promo ini?')) return;
 
     try {
       const { error } = await supabase
         .from('Promo')
         .delete()
-        .eq('id', id);
+        .eq('kategori', kategori)
+        .eq('product_id', product_id);
 
       if (error) throw error;
 
@@ -191,22 +188,22 @@ const PromoManager = () => {
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="judul_promo">Judul Promo</Label>
+                      <Label htmlFor="kategori">Kategori</Label>
                       <Input
-                        id="judul_promo"
-                        value={formData.judul_promo}
-                        onChange={(e) => setFormData({...formData, judul_promo: e.target.value})}
-                        placeholder="Contoh: Diskon Akhir Tahun"
+                        id="kategori"
+                        value={formData.kategori}
+                        onChange={(e) => setFormData({...formData, kategori: e.target.value})}
+                        placeholder="Contoh: Elektronik"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="nama">Nama</Label>
+                      <Label htmlFor="product_id">Product ID</Label>
                       <Input
-                        id="nama"
-                        value={formData.nama}
-                        onChange={(e) => setFormData({...formData, nama: e.target.value})}
-                        placeholder="Nama promo"
+                        id="product_id"
+                        value={formData.product_id}
+                        onChange={(e) => setFormData({...formData, product_id: e.target.value})}
+                        placeholder="ID produk"
                         required
                       />
                     </div>
@@ -243,16 +240,6 @@ const PromoManager = () => {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="syarat_ketentuan">Syarat & Ketentuan</Label>
-                    <Textarea
-                      id="syarat_ketentuan"
-                      value={formData.syarat_ketentuan}
-                      onChange={(e) => setFormData({...formData, syarat_ketentuan: e.target.value})}
-                      placeholder="Syarat dan ketentuan promo"
-                      rows={3}
-                    />
-                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -271,18 +258,20 @@ const PromoManager = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Judul Promo</TableHead>
-              <TableHead>Nama</TableHead>
+              <TableHead>Kategori</TableHead>
+              <TableHead>Product ID</TableHead>
+              <TableHead>Deskripsi</TableHead>
               <TableHead>Tanggal Mulai</TableHead>
               <TableHead>Tanggal Selesai</TableHead>
               <TableHead>Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {promos.map((promo) => (
-              <TableRow key={promo.id}>
-                <TableCell className="font-medium">{promo.judul_promo || '-'}</TableCell>
-                <TableCell>{promo.nama}</TableCell>
+            {promos.map((promo, index) => (
+              <TableRow key={`${promo.kategori}-${promo.product_id}-${index}`}>
+                <TableCell className="font-medium">{promo.kategori}</TableCell>
+                <TableCell>{promo.product_id}</TableCell>
+                <TableCell>{promo.deskripsi || '-'}</TableCell>
                 <TableCell>
                   {promo.tanggal_mulai ? new Date(promo.tanggal_mulai).toLocaleDateString('id-ID') : '-'}
                 </TableCell>
@@ -301,7 +290,7 @@ const PromoManager = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDelete(promo.id)}
+                      onClick={() => handleDelete(promo.kategori, promo.product_id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
