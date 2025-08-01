@@ -46,42 +46,14 @@ const Dashboard = () => {
 
   const fetchDailyMetrics = async () => {
     try {
+      // Always generate data by directly querying each table for consistency
       const { start, end } = getDateRange('30days'); // Always show last 30 days for chart
       const startDate = start.toISOString().split('T')[0];
       const endDate = end.toISOString().split('T')[0];
-
-      // Try to use the metrics function first
-      const { data, error } = await supabase
-        .rpc('get_daily_metrics_range', {
-          start_date: startDate,
-          end_date: endDate
-        });
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const formattedData = data.map((item: any) => ({
-          date: new Date(item.date).toLocaleDateString('id-ID', { 
-            month: 'short', 
-            day: 'numeric' 
-          }),
-          chat: item.total_chats || 0,
-          keluhan: item.total_complaints || 0,
-          checkout: item.total_checkouts || 0
-        }));
-
-        setDailyMetrics(formattedData);
-      } else {
-        // Fallback: generate data manually by querying each table
-        await generateFallbackMetrics(startDate, endDate);
-      }
-    } catch (error) {
-      console.error('Error fetching daily metrics, using fallback:', error);
-      // Fallback: generate data manually
-      const { start, end } = getDateRange('30days');
-      const startDate = start.toISOString().split('T')[0];
-      const endDate = end.toISOString().split('T')[0];
       await generateFallbackMetrics(startDate, endDate);
+    } catch (error) {
+      console.error('Error fetching daily metrics:', error);
+      setDailyMetrics([]);
     }
   };
 
