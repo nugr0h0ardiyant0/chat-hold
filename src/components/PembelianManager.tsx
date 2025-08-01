@@ -7,21 +7,24 @@ import { Switch } from "@/components/ui/switch";
 import { ShoppingCart, RefreshCw, Clock, Package, User, MapPin, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-interface Pembelian {
-  id: string;
-  nama_penerima?: string;
-  no_hp_penerima?: string;
-  alamat_penerima?: string;
+interface RingkasanOrder {
+  nama_penerima: string;
+  no_hp_penerima: string;
+  alamat_penerima: string;
+  status: string;
+  proses: boolean;
+  total_pembayaran: number;
+  total_ongkir: number;
+  order_id: string;
+}
+
+interface PembelianWithRingkasan extends RingkasanOrder {
   ringkasan?: string;
-  total_pembayaran?: number;
-  proses?: boolean;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
+  id?: string;
 }
 
 const PembelianManager = () => {
-  const [pembelian, setPembelian] = useState<Pembelian[]>([]);
+  const [pembelian, setPembelian] = useState<PembelianWithRingkasan[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [summary, setSummary] = useState({
     total: 0,
@@ -33,26 +36,36 @@ const PembelianManager = () => {
   const fetchPembelian = async () => {
     setIsRefreshing(true);
     try {
-      // Get Orders first, then fetch corresponding Cart data
+      // Use raw SQL query to call the function since it's not in types
       const { data: ordersData, error: ordersError } = await supabase
         .from('Order')
-        .select('*')
+        .select(`
+          id,
+          nama_penerima,
+          no_hp_penerima,
+          alamat_penerima,
+          status,
+          proses,
+          total_pembayaran
+        `)
         .order('created_at', { ascending: false });
 
       if (ordersError) throw ordersError;
 
-      // For each order, try to get the corresponding Cart ringkasan using the same ID
+      // Get Cart data with ringkasan for each order
       const ordersWithRingkasan = await Promise.all(
         (ordersData || []).map(async (order) => {
           const { data: cartData } = await supabase
             .from('Cart')
-            .select('ringkasan')
-            .eq('id', order.id)
-            .single();
+            .select('ringkasan, total_ongkir')
+            .eq('id', order.id.replace('order_', ''))
+            .maybeSingle();
           
           return {
             ...order,
-            ringkasan: cartData?.ringkasan || order.ringkasan || 'Tidak ada ringkasan'
+            order_id: order.id,
+            total_ongkir: cartData?.total_ongkir || 0,
+            ringkasan: cartData?.ringkasan || 'Tidak ada ringkasan'
           };
         })
       );
@@ -196,58 +209,56 @@ const PembelianManager = () => {
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                         <div className="flex items-center gap-2">
-                           <Package className="h-4 w-4 text-primary" />
-                           <span className="font-mono text-sm text-muted-foreground">#{item.id}</span>
-                           <Badge variant={item.proses ? "default" : "secondary"}>
-                             {item.proses ? 'Sedang Diproses' : 'Belum Diproses'}
-                           </Badge>
-                           {item.status && (
-                             <Badge variant="outline">
-                               {item.status}
-                             </Badge>
-                           )}
+                       <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-primary" />
+                            <span className="font-mono text-sm text-muted-foreground">#{item.order_id}</span>
+                            <Badge variant={item.proses ? "default" : "secondary"}>
+                              {item.proses ? 'Sedang Diproses' : 'Belum Diproses'}
+                            </Badge>
+                            {item.status && (
+                              <Badge variant="outline">
+                                {item.status}
+                              </Badge>
+                            )}
+                          </div>
+                         
+                         <div className="flex items-center gap-2 text-sm">
+                           <User className="h-4 w-4 text-muted-foreground" />
+                           <span className="font-medium">{item.nama_penerima || 'Belum diisi'}</span>
                          </div>
-                        
-                        <div className="flex items-center gap-2 text-sm">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{item.nama_penerima || 'Belum diisi'}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <ShoppingCart className="h-4 w-4" />
-                          <span>{item.no_hp_penerima || 'No HP belum diisi'}</span>
-                        </div>
-                        
-                        <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                          <span>{item.alamat_penerima || 'Alamat belum diisi'}</span>
-                        </div>
-                      </div>
-                      
-                       <div className="text-right space-y-2">
-                        <div className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(item.updated_at).toLocaleString('id-ID')}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Settings className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">Status Proses:</span>
-                          <Switch
-                            checked={item.proses}
-                            onCheckedChange={(checked) => updateProses(item.id, checked)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-muted/30 p-3 rounded-lg">
-                      <h4 className="text-sm font-medium mb-2">Ringkasan Pembelian:</h4>
-                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono">
-                        {item.ringkasan || 'Tidak ada ringkasan'}
-                      </pre>
-                    </div>
+                         
+                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                           <ShoppingCart className="h-4 w-4" />
+                           <span>{item.no_hp_penerima || 'No HP belum diisi'}</span>
+                         </div>
+                         
+                         <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                           <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                           <span>{item.alamat_penerima || 'Alamat belum diisi'}</span>
+                         </div>
+                       </div>
+                       
+                        <div className="text-right space-y-2">
+                         <div className="flex items-center gap-2">
+                           <Settings className="h-4 w-4 text-muted-foreground" />
+                           <span className="text-sm">Status Proses:</span>
+                           <Switch
+                             checked={item.proses}
+                             onCheckedChange={(checked) => updateProses(item.order_id, checked)}
+                           />
+                         </div>
+                       </div>
+                     </div>
+                     
+                     <div className="bg-muted/20 p-6 rounded-lg border-l-4 border-l-primary">
+                       <h4 className="text-lg font-semibold mb-4 text-foreground">Ringkasan Pembelian</h4>
+                       <div className="bg-background p-4 rounded-md border max-h-96 overflow-y-auto">
+                         <pre className="text-sm text-foreground whitespace-pre-wrap font-mono leading-relaxed">
+                           {item.ringkasan || 'Tidak ada ringkasan'}
+                         </pre>
+                       </div>
+                     </div>
                   </div>
                 </div>
               ))}
