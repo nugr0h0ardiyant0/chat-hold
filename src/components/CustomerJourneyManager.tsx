@@ -41,9 +41,9 @@ const CustomerJourneyManager = () => {
       
       setJourneys(data || []);
       
-      // Calculate summary
+      // Calculate summary - follow_up FALSE means needs follow up
       const total = data?.length || 0;
-      const followUp = data?.filter(j => j.follow_up).length || 0;
+      const followUp = data?.filter(j => !j.follow_up).length || 0; // Count FALSE as needing follow up
       const stages = data?.reduce((acc: any, journey: any) => {
         acc[journey.customer_journey] = (acc[journey.customer_journey] || 0) + 1;
         return acc;
@@ -201,7 +201,7 @@ const CustomerJourneyManager = () => {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-warning">{summary.followUp}</div>
-            <p className="text-sm text-muted-foreground">Follow Up</p>
+            <p className="text-sm text-muted-foreground">Perlu Follow Up</p>
           </CardContent>
         </Card>
         <Card>
@@ -249,9 +249,14 @@ const CustomerJourneyManager = () => {
                           <Badge className={getStageColor(journey.customer_journey)}>
                             {formatStage(journey.customer_journey)}
                           </Badge>
+                          {!journey.follow_up && (
+                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                              Perlu Follow Up
+                            </Badge>
+                          )}
                           {journey.follow_up && (
-                            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                              Follow Up
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Follow Up Selesai
                             </Badge>
                           )}
                         </div>
@@ -292,7 +297,7 @@ const CustomerJourneyManager = () => {
                         onClick={() => toggleFollowUp(journey.id, journey.follow_up)}
                         className="gap-2"
                       >
-                        {journey.follow_up ? 'Remove Follow Up' : 'Set Follow Up'}
+                        {journey.follow_up ? 'Selesai Follow Up' : 'Butuh Follow Up'}
                       </Button>
                     </div>
                 </div>
