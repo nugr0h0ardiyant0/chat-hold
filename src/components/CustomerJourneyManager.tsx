@@ -84,6 +84,7 @@ const CustomerJourneyManager = () => {
       toast({
         title: "Berhasil",
         description: currentFollowUp ? "Follow up diaktifkan" : "Follow up dinonaktifkan",
+        duration: 5000, // 5 detik
       });
       fetchJourneys();
     } catch (error) {
