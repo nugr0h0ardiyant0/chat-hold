@@ -396,12 +396,9 @@ export type Database = {
         Row: {
           created_at: string | null
           deskripsi: string | null
-          id: string
-          jenis: string | null
-          judul_promo: string | null
-          nama: string
+          kategori: string
+          nama: string | null
           product_id: string | null
-          syarat_ketentuan: string | null
           tanggal_mulai: string | null
           tanggal_selesai: string | null
           updated_at: string | null
@@ -409,12 +406,9 @@ export type Database = {
         Insert: {
           created_at?: string | null
           deskripsi?: string | null
-          id: string
-          jenis?: string | null
-          judul_promo?: string | null
-          nama: string
+          kategori: string
+          nama?: string | null
           product_id?: string | null
-          syarat_ketentuan?: string | null
           tanggal_mulai?: string | null
           tanggal_selesai?: string | null
           updated_at?: string | null
@@ -422,12 +416,9 @@ export type Database = {
         Update: {
           created_at?: string | null
           deskripsi?: string | null
-          id?: string
-          jenis?: string | null
-          judul_promo?: string | null
-          nama?: string
+          kategori?: string
+          nama?: string | null
           product_id?: string | null
-          syarat_ketentuan?: string | null
           tanggal_mulai?: string | null
           tanggal_selesai?: string | null
           updated_at?: string | null
@@ -568,6 +559,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      debug_ringkasan_order: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          order_id_original: string
+          cart_id_original: string
+          order_id_processed: string
+          cart_id_processed: string
+          join_condition: boolean
+        }[]
+      }
       get_chat_metrics_range: {
         Args: { start_date: string; end_date: string }
         Returns: number
@@ -627,6 +628,19 @@ export type Database = {
       get_follow_up_count: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      get_ringkasan_order: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          nama_penerima: string
+          no_hp_penerima: string
+          alamat_penerima: string
+          status: string
+          proses: boolean
+          total_pembayaran: number
+          total_ongkir: number
+          order_id: string
+        }[]
       }
       get_user_role: {
         Args: { user_id: string }

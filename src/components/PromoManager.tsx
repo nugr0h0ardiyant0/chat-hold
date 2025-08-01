@@ -18,6 +18,9 @@ interface Promo {
   tanggal_selesai: string;
   created_at?: string;
   updated_at?: string;
+  // Additional fields from DB that we don't use in UI but need for operations
+  nama?: string;
+  id?: string;
 }
 
 const PromoManager = () => {
@@ -75,7 +78,10 @@ const PromoManager = () => {
 
     try {
       const promoData = {
-        ...formData,
+        kategori: formData.kategori,
+        nama: formData.kategori, // Use kategori as nama since nama is required
+        product_id: formData.product_id,
+        deskripsi: formData.deskripsi,
         tanggal_mulai: new Date(formData.tanggal_mulai).toISOString(),
         tanggal_selesai: new Date(formData.tanggal_selesai).toISOString(),
       };
@@ -84,7 +90,7 @@ const PromoManager = () => {
         const { error } = await supabase
           .from('Promo')
           .update({ ...promoData, updated_at: new Date().toISOString() })
-          .eq('kategori', editingPromo.kategori)
+          .eq('nama', editingPromo.nama || editingPromo.kategori)
           .eq('product_id', editingPromo.product_id);
 
         if (error) throw error;
@@ -121,10 +127,10 @@ const PromoManager = () => {
     }
   };
 
-  const handleEdit = (promo: Promo) => {
+  const handleEdit = (promo: any) => {
     setEditingPromo(promo);
     setFormData({
-      kategori: promo.kategori || '',
+      kategori: promo.nama || '', // Use nama as kategori since user wants kategori field
       product_id: promo.product_id || '',
       deskripsi: promo.deskripsi || '',
       tanggal_mulai: promo.tanggal_mulai ? new Date(promo.tanggal_mulai).toISOString().split('T')[0] : '',
@@ -133,14 +139,14 @@ const PromoManager = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (kategori: string, product_id: string) => {
+  const handleDelete = async (nama: string, product_id: string) => {
     if (!confirm('Apakah Anda yakin ingin menghapus promo ini?')) return;
 
     try {
       const { error } = await supabase
         .from('Promo')
         .delete()
-        .eq('kategori', kategori)
+        .eq('nama', nama)
         .eq('product_id', product_id);
 
       if (error) throw error;
@@ -267,9 +273,9 @@ const PromoManager = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {promos.map((promo, index) => (
-              <TableRow key={`${promo.kategori}-${promo.product_id}-${index}`}>
-                <TableCell className="font-medium">{promo.kategori}</TableCell>
+            {promos.map((promo: any, index) => (
+              <TableRow key={`${promo.nama}-${promo.product_id}-${index}`}>
+                <TableCell className="font-medium">{promo.nama}</TableCell>
                 <TableCell>{promo.product_id}</TableCell>
                 <TableCell>{promo.deskripsi || '-'}</TableCell>
                 <TableCell>
@@ -290,7 +296,7 @@ const PromoManager = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDelete(promo.kategori, promo.product_id)}
+                      onClick={() => handleDelete(promo.nama, promo.product_id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
