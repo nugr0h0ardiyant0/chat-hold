@@ -83,7 +83,7 @@ const CustomerJourneyManager = () => {
 
       toast({
         title: "Berhasil",
-        description: `Follow up ${!currentFollowUp ? 'diaktifkan' : 'dinonaktifkan'}`,
+        description: !currentFollowUp ? "Follow up diaktifkan" : "Follow up dinonaktifkan",
       });
       fetchJourneys();
     } catch (error) {
