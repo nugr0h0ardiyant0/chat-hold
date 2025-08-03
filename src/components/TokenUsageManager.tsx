@@ -169,13 +169,13 @@ const TokenUsageManager = () => {
       <div className="grid gap-4 md:grid-cols-1 max-w-md">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Input Tokens</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Tokens</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatNumber(totalUsage.input)}</div>
             <p className="text-xs text-muted-foreground">
-              Tokens yang dikirim ke AI models
+              Total tokens yang digunakan
             </p>
           </CardContent>
         </Card>
@@ -184,9 +184,9 @@ const TokenUsageManager = () => {
       {/* Token Usage Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Input Token Usage Trends</CardTitle>
+          <CardTitle>Token Usage Trends</CardTitle>
           <CardDescription>
-            Daily breakdown of input token consumption
+            Daily breakdown of total token consumption
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -217,7 +217,7 @@ const TokenUsageManager = () => {
                   }}
                   formatter={(value: number, name: string) => [
                     formatNumber(value),
-                    'Input Tokens'
+                    'Total Tokens'
                   ]}
                 />
                 <Legend />
@@ -226,7 +226,7 @@ const TokenUsageManager = () => {
                   dataKey="input_token" 
                   stroke="hsl(var(--primary))" 
                   strokeWidth={3}
-                  name="Input Tokens"
+                  name="Total Tokens"
                   dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 5 }}
                   activeDot={{ r: 7, stroke: 'hsl(var(--primary))', strokeWidth: 2, fill: 'hsl(var(--background))' }}
                 />
