@@ -18,7 +18,8 @@ import {
   AlertTriangle, 
   Package, 
   Tag, 
-  ShoppingCart 
+  ShoppingCart,
+  Activity
 } from "lucide-react";
 
 const menuItems = [
@@ -63,6 +64,12 @@ const menuItems = [
     url: "/pembelian", 
     icon: ShoppingCart,
     description: "Kelola Order & Pembelian"
+  },
+  { 
+    title: "Token Usage", 
+    url: "/token-usage", 
+    icon: Activity,
+    description: "Analytics Penggunaan Token"
   },
 ];
 
