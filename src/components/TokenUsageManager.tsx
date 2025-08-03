@@ -48,8 +48,8 @@ const TokenUsageManager = () => {
     }
 
     return {
-      start: format(start, 'yyyy-MM-dd'),
-      end: format(end, 'yyyy-MM-dd')
+      start: format(start, 'yyyy-MM-dd HH:mm:ss'),
+      end: format(end, 'yyyy-MM-dd HH:mm:ss')
     };
   };
 
@@ -63,7 +63,7 @@ const TokenUsageManager = () => {
         .from('TokenUsage' as any)
         .select('input_token, timestamp')
         .gte('timestamp', start)
-        .lte('timestamp', end)
+        .lt('timestamp', end)
         .order('timestamp', { ascending: true });
 
       if (error) throw error;
