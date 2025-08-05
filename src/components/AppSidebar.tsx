@@ -22,55 +22,62 @@ import {
   Activity
 } from "lucide-react";
 
-const menuItems = [
-  { 
-    title: "Dashboard", 
-    url: "/dashboard", 
-    icon: BarChart3,
-    description: "Overview dan Analytics"
+const menuGroups = [
+  {
+    label: "ANALYTICS",
+    items: [
+      { 
+        title: "Dashboard", 
+        url: "/dashboard", 
+        icon: BarChart3
+      },
+      { 
+        title: "Token Usage", 
+        url: "/token-usage", 
+        icon: Activity
+      },
+    ]
   },
-  { 
-    title: "Hold Manager", 
-    url: "/", 
-    icon: Shield,
-    description: "Kelola Nomor Hold"
+  {
+    label: "MANAGEMENT",
+    items: [
+      { 
+        title: "Hold Manager", 
+        url: "/", 
+        icon: Shield
+      },
+      { 
+        title: "Customer Journey", 
+        url: "/customer-journey", 
+        icon: MessageSquare
+      },
+      { 
+        title: "Keluhan", 
+        url: "/keluhan", 
+        icon: AlertTriangle
+      },
+    ]
   },
-  { 
-    title: "Customer Journey", 
-    url: "/customer-journey", 
-    icon: MessageSquare,
-    description: "Tracking Perjalanan Pelanggan"
-  },
-  { 
-    title: "Keluhan", 
-    url: "/keluhan", 
-    icon: AlertTriangle,
-    description: "Manajemen Keluhan"
-  },
-  { 
-    title: "Produk", 
-    url: "/produk", 
-    icon: Package,
-    description: "Kelola Produk"
-  },
-  { 
-    title: "Promo", 
-    url: "/promo", 
-    icon: Tag,
-    description: "Manajemen Promo"
-  },
-  { 
-    title: "Pembelian", 
-    url: "/pembelian", 
-    icon: ShoppingCart,
-    description: "Kelola Order & Pembelian"
-  },
-  { 
-    title: "Token Usage", 
-    url: "/token-usage", 
-    icon: Activity,
-    description: "Analytics Penggunaan Token"
-  },
+  {
+    label: "COMMERCE",
+    items: [
+      { 
+        title: "Produk", 
+        url: "/produk", 
+        icon: Package
+      },
+      { 
+        title: "Promo", 
+        url: "/promo", 
+        icon: Tag
+      },
+      { 
+        title: "Pembelian", 
+        url: "/pembelian", 
+        icon: ShoppingCart
+      },
+    ]
+  }
 ];
 
 export function AppSidebar() {
@@ -106,31 +113,32 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu Utama</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-2">
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      className={`px-4 py-3 rounded-lg transition-colors ${getNavClass(item.url)}`}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      {state !== "collapsed" && (
-                        <div className="flex flex-col ml-3">
-                          <span className="text-sm font-medium">{item.title}</span>
-                          <span className="text-xs opacity-60">{item.description}</span>
-                        </div>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {menuGroups.map((group) => (
+          <SidebarGroup key={group.label} className="mb-6">
+            <SidebarGroupLabel className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider mb-3">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1">
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url} 
+                        className={`px-3 py-2 rounded-md transition-colors ${getNavClass(item.url)}`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {state !== "collapsed" && (
+                          <span className="text-sm font-medium ml-3">{item.title}</span>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
     </Sidebar>
   );
