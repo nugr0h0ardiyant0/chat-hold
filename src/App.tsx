@@ -13,6 +13,7 @@ import ProductManager from "@/components/ProductManager";
 import PromoManager from "@/components/PromoManager";
 import PembelianManager from "@/components/PembelianManager";
 import TokenUsageManager from "@/components/TokenUsageManager";
+import StyleCSManager from "@/components/StyleCSManager";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import NotFound from "./pages/NotFound";
@@ -81,6 +82,13 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <TokenUsageManager />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/style-cs" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <StyleCSManager />
                 </AppLayout>
               </ProtectedRoute>
             } />

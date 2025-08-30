@@ -7,116 +7,72 @@ import { Switch } from "@/components/ui/switch";
 import { ShoppingCart, RefreshCw, Clock, Package, User, MapPin, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-interface RingkasanOrder {
-  nama_penerima: string;
-  no_hp_penerima: string;
-  alamat_penerima: string;
-  status: string;
-  proses: boolean;
-  total_pembayaran: number;
-  total_ongkir: number;
+interface OrderExportData {
+  export_id: string;
   order_id: string;
-}
-
-interface PembelianWithRingkasan extends RingkasanOrder {
-  ringkasan?: string;
-  id?: string;
+  nama_lengkap: string;
+  nomor_hp: string;
+  alamat_jalan: string;
+  alamat_kecamatan: string;
+  alamat_kota_kabupaten: string;
+  alamat_provinsi: string;
+  kode_pos: string;
+  status: string;
+  waktu_transaksi: string;
+  subtotal: number;
+  harga_ongkir: number;
+  grand_total: number;
+  orderan: any;
+  created_at: string;
 }
 
 const PembelianManager = () => {
-  const [pembelian, setPembelian] = useState<PembelianWithRingkasan[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [summary, setSummary] = useState({
     total: 0,
-    proses: 0,
-    belum_proses: 0
+    paid: 0,
+    pending: 0,
+    draft: 0
   });
   const { toast } = useToast();
 
-  const fetchPembelian = async () => {
+  const fetchOrders = async () => {
     setIsRefreshing(true);
     try {
-      // Use raw SQL query to call the function since it's not in types
-      const { data: ordersData, error: ordersError } = await supabase
+      // For now, use Order table until OrderExport is available
+      const { data: ordersData, error } = await supabase
         .from('Order')
-        .select(`
-          id,
-          nama_penerima,
-          no_hp_penerima,
-          alamat_penerima,
-          status,
-          proses,
-          total_pembayaran
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (ordersError) throw ordersError;
+      if (error) throw error;
 
-      // Get Cart data with ringkasan for each order
-      const ordersWithRingkasan = await Promise.all(
-        (ordersData || []).map(async (order) => {
-          const { data: cartData } = await supabase
-            .from('Cart')
-            .select('ringkasan, total_ongkir')
-            .eq('id', order.id.replace('order_', ''))
-            .maybeSingle();
-          
-          return {
-            ...order,
-            order_id: order.id,
-            total_ongkir: cartData?.total_ongkir || 0,
-            ringkasan: cartData?.ringkasan || 'Tidak ada ringkasan'
-          };
-        })
-      );
-
-      setPembelian(ordersWithRingkasan);
+      setOrders(ordersData || []);
       
-      // Calculate summary
-      const total = ordersWithRingkasan?.length || 0;
-      const proses = ordersWithRingkasan?.filter(item => item.proses).length || 0;
-      const belum_proses = total - proses;
+      // Calculate summary based on available status
+      const total = ordersData?.length || 0;
+      const processing = ordersData?.filter((item: any) => item.status === 'PROCESSING').length || 0;
+      const draft = ordersData?.filter((item: any) => item.status === 'DRAFT').length || 0;
+      const pending = ordersData?.filter((item: any) => item.proses === true).length || 0;
 
-      setSummary({ total, proses, belum_proses });
+      setSummary({ total, paid: processing, pending, draft });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Gagal memuat data pembelian",
+        description: "Gagal memuat data tracking pembelian",
         variant: "destructive",
       });
-      console.error('Error fetching pembelian:', error);
+      console.error('Error fetching orders:', error);
     } finally {
       setIsRefreshing(false);
     }
   };
 
-  const updateProses = async (id: string, proses: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('Order')
-        .update({ proses, updated_at: new Date().toISOString() })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Berhasil",
-        description: `Status proses ${proses ? 'diaktifkan' : 'dinonaktifkan'}`,
-      });
-
-      fetchPembelian();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Gagal mengupdate status proses",
-        variant: "destructive",
-      });
-      console.error('Error updating proses:', error);
-    }
-  };
+  // No update functionality needed - this is for tracking only
 
   useEffect(() => {
-    fetchPembelian();
+    fetchOrders();
 
     // Set up real-time subscription
     const channel = supabase
@@ -129,7 +85,7 @@ const PembelianManager = () => {
           table: 'Order'
         },
         () => {
-          fetchPembelian();
+          fetchOrders();
         }
       )
       .subscribe();
@@ -145,15 +101,15 @@ const PembelianManager = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Kelola Pembelian</h1>
+          <h1 className="text-3xl font-bold text-foreground">Tracking Pembelian</h1>
           <p className="text-muted-foreground">
-            Manajemen order dan tracking pembelian pelanggan
+            Tracking dan monitoring data pembelian pelanggan
           </p>
         </div>
         <Button
           variant="outline"
           size="sm"
-          onClick={fetchPembelian}
+          onClick={fetchOrders}
           disabled={isRefreshing}
           className="gap-2"
         >
@@ -163,23 +119,29 @@ const PembelianManager = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-primary">{summary.total}</div>
-            <p className="text-sm text-muted-foreground">Total Pembelian</p>
+            <p className="text-sm text-muted-foreground">Total Order</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-warning">{summary.proses}</div>
-            <p className="text-sm text-muted-foreground">Sedang Diproses</p>
+            <div className="text-2xl font-bold text-green-600">{summary.paid}</div>
+            <p className="text-sm text-muted-foreground">Sudah Bayar</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-muted-foreground">{summary.belum_proses}</div>
-            <p className="text-sm text-muted-foreground">Belum Diproses</p>
+            <div className="text-2xl font-bold text-yellow-600">{summary.pending}</div>
+            <p className="text-sm text-muted-foreground">Pending</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-muted-foreground">{summary.draft}</div>
+            <p className="text-sm text-muted-foreground">Draft</p>
           </CardContent>
         </Card>
       </div>
@@ -189,22 +151,22 @@ const PembelianManager = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            Data Pembelian
+            Data Tracking Pembelian
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {pembelian.length === 0 ? (
+          {orders.length === 0 ? (
             <div className="text-center py-12">
               <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                Belum ada data pembelian
+                Belum ada data tracking pembelian
               </h3>
             </div>
           ) : (
             <div className="space-y-4">
-              {pembelian.map((item) => (
+              {orders.map((order: any) => (
                 <div
-                  key={item.id}
+                  key={order.id}
                   className="p-4 rounded-lg border bg-card"
                 >
                   <div className="space-y-3">
@@ -212,53 +174,64 @@ const PembelianManager = () => {
                        <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <Package className="h-4 w-4 text-primary" />
-                            <span className="font-mono text-sm text-muted-foreground">#{item.order_id}</span>
-                            <Badge variant={item.proses ? "default" : "secondary"}>
-                              {item.proses ? 'Sedang Diproses' : 'Belum Diproses'}
+                            <span className="font-mono text-sm text-muted-foreground">#{order.id}</span>
+                            <Badge variant={
+                              order.status === 'PROCESSING' ? 'default' : 
+                              order.proses ? 'secondary' : 
+                              'outline'
+                            }>
+                              {order.status || 'DRAFT'}
                             </Badge>
-                            {item.status && (
-                              <Badge variant="outline">
-                                {item.status}
-                              </Badge>
-                            )}
                           </div>
                          
                          <div className="flex items-center gap-2 text-sm">
                            <User className="h-4 w-4 text-muted-foreground" />
-                           <span className="font-medium">{item.nama_penerima || 'Belum diisi'}</span>
+                           <span className="font-medium">{order.nama_penerima || 'Belum diisi'}</span>
                          </div>
                          
                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                            <ShoppingCart className="h-4 w-4" />
-                           <span>{item.no_hp_penerima || 'No HP belum diisi'}</span>
+                           <span>{order.no_hp_penerima || 'No HP belum diisi'}</span>
                          </div>
                          
                          <div className="flex items-start gap-2 text-sm text-muted-foreground">
                            <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                           <span>{item.alamat_penerima || 'Alamat belum diisi'}</span>
+                           <span>
+                             {order.alamat_penerima || 'Alamat belum diisi'}
+                           </span>
                          </div>
+                         
+                         {order.created_at && (
+                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                             <Clock className="h-4 w-4" />
+                             <span>{new Date(order.created_at).toLocaleString('id-ID')}</span>
+                           </div>
+                         )}
                        </div>
                        
                         <div className="text-right space-y-2">
-                         <div className="flex items-center gap-2">
-                           <Settings className="h-4 w-4 text-muted-foreground" />
-                           <span className="text-sm">Status Proses:</span>
-                           <Switch
-                             checked={item.proses}
-                             onCheckedChange={(checked) => updateProses(item.order_id, checked)}
-                           />
-                         </div>
+                          <div className="text-lg font-bold text-primary">
+                            Rp {order.total_pembayaran?.toLocaleString('id-ID') || '0'}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Status: {order.status || 'DRAFT'}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Proses: {order.proses ? 'Ya' : 'Tidak'}
+                          </div>
                        </div>
                      </div>
                      
-                     <div className="bg-muted/20 p-6 rounded-lg border-l-4 border-l-primary">
-                       <h4 className="text-lg font-semibold mb-4 text-foreground">Ringkasan Pembelian</h4>
-                       <div className="bg-background p-4 rounded-md border max-h-96 overflow-y-auto">
-                         <pre className="text-sm text-foreground whitespace-pre-wrap font-mono leading-relaxed">
-                           {item.ringkasan || 'Tidak ada ringkasan'}
-                         </pre>
+                     {order.ringkasan && (
+                       <div className="bg-muted/20 p-6 rounded-lg border-l-4 border-l-primary">
+                         <h4 className="text-lg font-semibold mb-4 text-foreground">Ringkasan Order</h4>
+                         <div className="bg-background p-4 rounded-md border max-h-96 overflow-y-auto">
+                           <pre className="text-sm text-foreground whitespace-pre-wrap font-mono leading-relaxed">
+                             {order.ringkasan || 'Tidak ada ringkasan'}
+                           </pre>
+                         </div>
                        </div>
-                     </div>
+                     )}
                   </div>
                 </div>
               ))}

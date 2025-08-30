@@ -88,13 +88,13 @@ const Dashboard = () => {
             .filter('Datetime', 'gte', dateStr)
             .filter('Datetime', 'lt', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
-          // Get checkout data - using updated_at when status is PROCESSING
+          // Get checkout data - using Order with status PROCESSING (fallback)
           const { data: checkoutData } = await supabase
             .from('Order')
             .select('id')
             .eq('status', 'PROCESSING')
-            .gte('updated_at', dateStr)
-            .lt('updated_at', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+            .gte('created_at', dateStr)
+            .lt('created_at', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
 
 
           return {
@@ -255,8 +255,8 @@ const Dashboard = () => {
             .from('Order')
             .select('id')
             .eq('status', 'PROCESSING')
-            .gte('updated_at', startDate)
-            .lte('updated_at', endDate + 'T23:59:59');
+            .gte('created_at', startDate)
+            .lte('created_at', endDate + 'T23:59:59');
 
           let followUpData = 0;
           

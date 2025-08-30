@@ -19,7 +19,8 @@ import {
   Package, 
   Tag, 
   ShoppingCart,
-  Activity
+  Activity,
+  Palette
 } from "lucide-react";
 
 const menuGroups = [
@@ -55,6 +56,11 @@ const menuGroups = [
         title: "Keluhan", 
         url: "/keluhan", 
         icon: AlertTriangle
+      },
+      { 
+        title: "Style CS", 
+        url: "/style-cs", 
+        icon: Palette
       },
     ]
   },
