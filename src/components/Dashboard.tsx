@@ -72,12 +72,12 @@ const Dashboard = () => {
         dates.map(async (date) => {
           const dateStr = date.toISOString().split('T')[0];
           
-          // Get chat data (unique users per day)
-          const { data: chatData } = await supabase
-            .from('User')
-            .select('phone_number')
-            .gte('updated_at', dateStr)
-            .lt('updated_at', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+        // Get chat data (unique users per day) - ensure proper timestamp filtering
+        const { data: chatData } = await supabase
+          .from('User')
+          .select('phone_number')
+          .gte('updated_at', dateStr + 'T00:00:00.000Z')
+          .lt('updated_at', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString());
           
           const uniqueChats = new Set(chatData?.map(item => item.phone_number) || []).size;
 
@@ -236,12 +236,12 @@ const Dashboard = () => {
         } catch (error) {
           console.log('Using fallback queries');
           
-          // Fallback to original queries
-          const { data: chatData } = await supabase
-            .from('User')
-            .select('phone_number')
-            .gte('updated_at', startDate)
-            .lte('updated_at', endDate + 'T23:59:59');
+           // Fallback to original queries - ensure proper date filtering for User table
+           const { data: chatData } = await supabase
+             .from('User')
+             .select('phone_number')
+             .gte('updated_at', startDate + 'T00:00:00.000Z')
+             .lte('updated_at', endDate + 'T23:59:59.999Z');
           
           const uniqueChats = new Set(chatData?.map(item => item.phone_number));
           
